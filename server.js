@@ -20,9 +20,12 @@ const MIME = {
 };
 
 http.createServer(function(req, res) {
-  let urlPath = decodeURIComponent(req.url.split('?')[0]);
+  let urlPath = req.url.split('?')[0];
   if (urlPath === '/') urlPath = '/index.html';
-  const filePath = path.join(ROOT, path.normalize('/' + urlPath));
+  // Normalize first, then decode to prevent %2f bypass
+  urlPath = path.normalize('/' + urlPath);
+  urlPath = decodeURIComponent(urlPath);
+  const filePath = path.join(ROOT, urlPath);
 
   if (!filePath.startsWith(ROOT)) {
     res.writeHead(403);
