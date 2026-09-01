@@ -4,44 +4,33 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HemorróidaBot</title>
-    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="app">
-        <header>
-            <h1>🧠 HemorróidaBot</h1>
-            <p>MEGABRAIN local com JS puro</p>
-        </header>
+    <h1>HemorróidaBot</h1>
+    <p>MEGABRAIN local com JS puro</p>
 
-        <div id="model-selector">
-            <label for="model-select">Modelo:</label>
-            <select id="model-select">
-                <option value="qwen-3b">Qwen 2.5 3B</option>
-                <option value="qwen-7b">Qwen 2.5 7B</option>
-                <option value="llama-3.2-3b">Llama 3.2 3B</option>
-                <option value="gemma-4b">Gemma 3 4B</option>
-            </select>
-        </div>
+    <h2>Modelo</h2>
+    <select id="model-select">
+        <option value="qwen-3b">Qwen 2.5 3B</option>
+        <option value="qwen-7b">Qwen 2.5 7B</option>
+        <option value="llama-3.2-3b">Llama 3.2 3B</option>
+        <option value="gemma-4b">Gemma 3 4B</option>
+    </select>
 
-        <div id="input-mode-toggle">
-            <button id="btn-text" class="mode-btn active">⌨️ Texto</button>
-            <button id="btn-voice" class="mode-btn">🎤 Voz</button>
-        </div>
+    <h2>Entrada</h2>
+    <button id="btn-text" onclick="setMode('text')">Texto</button>
+    <button id="btn-voice" onclick="setMode('voice')">Voz</button>
 
-        <div id="chat-container">
-            <div id="messages"></div>
-        </div>
+    <h2>Chat</h2>
+    <div id="messages"></div>
 
-        <div id="input-area">
-            <textarea id="user-input" placeholder="Digite sua mensagem..." rows="2"></textarea>
-            <button id="send-btn">Enviar</button>
-        </div>
+    <h2>Mensagem</h2>
+    <textarea id="user-input" rows="3" cols="50" placeholder="Digite sua mensagem..."></textarea>
+    <br>
+    <button id="send-btn" onclick="sendMessage()">Enviar</button>
 
-        <div id="api-tools" style="display:none;">
-            <h3>🔧 Ferramentas</h3>
-            <div id="tools-grid"></div>
-        </div>
-    </div>
+    <h2>Ferramentas</h2>
+    <div id="tools-grid"></div>
 
     <script src="app.js"></script>
 </body>
