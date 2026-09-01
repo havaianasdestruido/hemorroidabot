@@ -198,6 +198,23 @@ async function sendMessage() {
 
   addMessage('Processando...', 'bot');
 
+  // Se a engine WASM esta carregada, gera resposta local de verdade.
+  if (window.HemorroidaEngine && window.HemorroidaEngine.isModelLoaded()) {
+    messagesEl.removeChild(messagesEl.lastElementChild);
+    const engine = window.HemorroidaEngine;
+    try {
+      const reply = await engine.generate(text, {
+        maxTokens: 512,
+        temperature: 0.7,
+        onToken: function() {}
+      });
+      addMessage(reply, 'bot');
+    } catch (e) {
+      addMessage('Erro na inferencia: ' + e.message, 'bot');
+    }
+    return;
+  }
+
   await new Promise(function(r) { setTimeout(r, 800); });
 
   messagesEl.removeChild(messagesEl.lastElementChild);
@@ -292,6 +309,33 @@ userInput.addEventListener('keydown', function(e) {
       });
     });
   };
+
+  var loadEngineBtn = document.getElementById('load-engine-btn');
+  if (loadEngineBtn) {
+    loadEngineBtn.onclick = function() {
+      var sel = currentSelection();
+      if (!sel.repo || !sel.file) { setStatus('Defina repo e arquivo.'); return; }
+      setStatus('Inicializando engine WASM e carregando modelo...');
+      var waitForEngine = function() {
+        if (window.HemorroidaEngine) {
+          doLoad(sel);
+        } else {
+          setTimeout(waitForEngine, 100);
+        }
+      };
+      function doLoad(sel) {
+        window.HemorroidaEngine.loadModelFromCache(sel.repo, sel.file, 'main')
+          .then(function(info) {
+            setStatus('Modelo carregado: ' + info.file + ' (pronto para uso).');
+            addMessage('Engine WASM pronta. Modelo local carregado: ' + info.file, 'bot');
+          })
+          .catch(function(e) {
+            setStatus('Erro: ' + e.message);
+          });
+      }
+      waitForEngine();
+    };
+  }
 
   modelSelect.addEventListener('change', function() {
     var known = ModelManager.findKnown(modelSelect.value);
