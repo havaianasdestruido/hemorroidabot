@@ -1,4 +1,5 @@
 # HemorróidaBot
+[![CI](https://github.com/havaianasdestruido/hemorroidabot/actions/workflows/ci.yml/badge.svg)](https://github.com/havaianasdestruido/hemorroidabot/actions/workflows/ci.yml)
 Esse projeto é um exemplo de como você pode fazer um MEGABRAIN só com JS no front-end. (e uma IA burra de 8B ou menos, como `Qwen 2.5 3B/7B, Llama 3.2 3B, Gemma 3 4B etc.`)
 
 Ele é 100% local-side, ou sejs, ele é interamente feito em JS do lado do cliente.
