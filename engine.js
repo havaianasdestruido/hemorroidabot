@@ -86,6 +86,7 @@ async function generate(prompt, opts) {
   const maxTokens = opts.maxTokens || 512;
 
   let full = '';
+  const t0 = performance.now();
   await engine.createCompletion({
     prompt: prompt,
     n_predict: maxTokens,
@@ -101,7 +102,56 @@ async function generate(prompt, opts) {
       }
     }
   });
+  if (typeof opts.onPerf === 'function') opts.onPerf(full.length, performance.now() - t0);
   return full;
+}
+
+// Chat com template do modelo + memoria. messages = [{role, content}].
+// Retorna { text, perf:{ms, charsPerSec, approxTokens} }.
+async function chat(messages, opts) {
+  const engine = ensureEngine();
+  opts = opts || {};
+  const maxTokens = opts.maxTokens || 2048;
+
+  const msgs = messages.map(function(m) {
+    return { role: m.role, content: m.content };
+  });
+  if (typeof opts.system === 'string') {
+    msgs.unshift({ role: 'system', content: opts.system });
+  }
+
+  let full = '';
+  let tk = 0; // aprox: chars/4
+  const t0 = performance.now();
+
+  const params = {
+    messages: msgs,
+    n_predict: maxTokens,
+    temperature: opts.temperature || 0.7,
+    top_k: 40,
+    top_p: 0.9,
+    stream: true,
+    onData: function(data) {
+      if (data && data.choices && data.choices.length) {
+        const delta = data.choices[0].text || '';
+        full += delta;
+        tk += delta.length;
+        if (typeof opts.onToken === 'function') opts.onToken(delta);
+      }
+    }
+  };
+
+  await engine.createChatCompletion(params);
+
+  const ms = performance.now() - t0;
+  const perf = {
+    ms: ms,
+    chars: full.length,
+    approxTokens: Math.max(1, Math.round(tk / 4)),
+    charsPerSec: ms > 0 ? (full.length / (ms / 1000)) : 0
+  };
+  if (typeof opts.onPerf === 'function') opts.onPerf(perf);
+  return { text: full, perf: perf };
 }
 
 function isModelLoaded() {
@@ -121,6 +171,7 @@ export {
   initWasm,
   loadModelFromCache,
   generate,
+  chat,
   isModelLoaded,
   unloadModel,
   getCachedBlob
@@ -131,6 +182,7 @@ window.HemorroidaEngine = {
   initWasm: initWasm,
   loadModelFromCache: loadModelFromCache,
   generate: generate,
+  chat: chat,
   isModelLoaded: isModelLoaded,
   unloadModel: unloadModel,
   getCachedBlob: getCachedBlob

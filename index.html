@@ -5,12 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HemorróidaBot</title>
     <style>
-        body { max-width: 600px; margin: 0 auto; padding: 20px; font-family: monospace; }
+        body { max-width: 640px; margin: 0 auto; padding: 20px; font-family: monospace; }
         h1 { font-size: 1.8em; }
         h2 { font-size: 1.2em; }
         textarea { width: 100%; }
         select, input { width: 100%; box-sizing: border-box; }
         pre { white-space: pre-wrap; }
+        .row { display: flex; gap: 6px; flex-wrap: wrap; }
+        .rec { color: #c00; font-weight: bold; }
+        #perf { font-size: 0.8em; }
     </style>
 </head>
 <body>
@@ -36,23 +39,40 @@
             <label for="file-input">Arquivo:</label>
             <input id="file-input" type="text" placeholder="modelo-q4_k_m.gguf">
             <br><br>
-            <button type="button" id="list-btn">Listar arquivos</button>
-            <button type="button" id="dl-btn">Baixar e cachear</button>
-            <button type="button" id="cache-btn">Ver cache</button>
-            <button type="button" id="load-engine-btn">Carregar modelo local</button>
+            <div class="row">
+                <button type="button" id="list-btn">Listar arquivos</button>
+                <button type="button" id="dl-btn">Baixar e cachear</button>
+                <button type="button" id="cache-btn">Ver cache</button>
+                <button type="button" id="load-engine-btn">Carregar modelo local</button>
+                <button type="button" id="unload-btn">Descarregar</button>
+            </div>
             <p id="dl-status"></p>
             <progress id="dl-progress" max="100" value="0" style="display:none;width:100%"></progress>
             <div id="file-list"></div>
         </fieldset>
 
         <fieldset>
-            <legend>Entrada</legend>
-            <label><input type="radio" name="mode" value="text" checked> Texto</label>
-            <label><input type="radio" name="mode" value="voice"> Voz</label>
+            <legend>Entrada / Voz</legend>
+            <div class="row">
+                <label><input type="radio" name="mode" value="text" checked> Texto</label>
+                <label><input type="radio" name="mode" value="voice"> Voz</label>
+            </div>
+            <div class="row">
+                <button type="button" id="mic-btn" disabled>🎤 Ditar</button>
+                <label><input type="checkbox" id="tts-chk"> Falar resposta (TTS)</label>
+            </div>
+        </fieldset>
+
+        <fieldset>
+            <legend>Desempenho</legend>
+            <div id="perf">Sem dados. Envie uma mensagem com um modelo carregado.</div>
         </fieldset>
 
         <fieldset>
             <legend>Chat</legend>
+            <div class="row">
+                <button type="button" id="clear-btn">Limpar historico</button>
+            </div>
             <div id="messages"></div>
         </fieldset>
 
@@ -71,6 +91,7 @@
     </fieldset>
 
     <script src="models.js"></script>
+    <script src="brain.js"></script>
     <script src="app.js"></script>
     <script type="module" src="engine.js"></script>
 </body>
