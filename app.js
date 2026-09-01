@@ -209,6 +209,99 @@ userInput.addEventListener('keydown', function(e) {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
 });
 
+// --- Integracao com ModelManager (models.js) ---
+(function setupModelDownloadUI() {
+  if (typeof ModelManager === 'undefined') return;
+
+  var repoInput = document.getElementById('repo-input');
+  var fileInput = document.getElementById('file-input');
+  var listBtn = document.getElementById('list-btn');
+  var dlBtn = document.getElementById('dl-btn');
+  var cacheBtn = document.getElementById('cache-btn');
+  var statusEl = document.getElementById('dl-status');
+  var progressEl = document.getElementById('dl-progress');
+  var fileListEl = document.getElementById('file-list');
+
+  var currentRepo = null;
+  var currentFiles = [];
+
+  function setStatus(text) {
+    statusEl.textContent = text;
+  }
+
+  function currentSelection() {
+    var known = ModelManager.findKnown(modelSelect.value);
+    if (known) {
+      return { repo: known.repo, file: known.file };
+    }
+    return {
+      repo: repoInput.value.trim() || currentRepo,
+      file: fileInput.value.trim() || currentFiles[0] || ''
+    };
+  }
+
+  listBtn.onclick = function() {
+    var repo = repoInput.value.trim();
+    if (!repo) {
+      var known = ModelManager.findKnown(modelSelect.value);
+      if (known) repo = known.repo;
+    }
+    if (!repo) { setStatus('Informe um repo.'); return; }
+    fileListEl.innerHTML = '';
+    setStatus('Listando arquivos de ' + repo + '...');
+    ModelManager.listFiles(repo).then(function(tree) {
+      currentRepo = repo;
+      currentFiles = tree.map(function(t) { return t.path; });
+      fileListEl.innerHTML = currentFiles.join('\n');
+      setStatus(currentFiles.length + ' arquivo(s) encontrado(s).');
+    }).catch(function(e) {
+      setStatus('Erro: ' + e.message);
+    });
+  };
+
+  dlBtn.onclick = function() {
+    var sel = currentSelection();
+    if (!sel.repo || !sel.file) { setStatus('Defina repo e arquivo.'); return; }
+    progressEl.style.display = 'inline';
+    progressEl.value = 0;
+    setStatus('Baixando ' + sel.file + ' (' + sel.repo + ')...');
+    ModelManager.download(sel.repo, sel.file, 'main', function(received, total) {
+      progressEl.value = (received / total) * 100;
+      setStatus('Baixando: ' + ModelManager.formatBytes(received) + ' de ' + ModelManager.formatBytes(total));
+    }).then(function(blob) {
+      progressEl.value = 100;
+      setStatus('Concluido! ' + ModelManager.formatBytes(blob.size) + ' salvo em cache.');
+      addMessage('Modelo ' + sel.file + ' baixado e armazenado no cache do navegador (' + ModelManager.formatBytes(blob.size) + ').', 'bot');
+    }).catch(function(e) {
+      setStatus('Erro: ' + e.message);
+    });
+  };
+
+  cacheBtn.onclick = function() {
+    caches.keys().then(function(keys) {
+      if (!keys.length) { setStatus('Cache vazio.'); return; }
+      Promise.all(keys.map(function(name) {
+        return caches.open(name).then(function(c) {
+          return c.keys().then(function(reqs) {
+            return reqs.length;
+          });
+        });
+      })).then(function(counts) {
+        var lines = keys.map(function(k, i) { return k + ': ' + counts[i] + ' item(s)'; });
+        setStatus('Caches:\n' + lines.join('\n'));
+      });
+    });
+  };
+
+  modelSelect.addEventListener('change', function() {
+    var known = ModelManager.findKnown(modelSelect.value);
+    if (known) {
+      repoInput.value = known.repo;
+      fileInput.value = known.file;
+    }
+  });
+})();
+
 console.log('HemorroidaBot initialized');
 console.log('APIs registradas: ' + Object.keys(API_REGISTRY).length);
 

@@ -9,7 +9,8 @@
         h1 { font-size: 1.8em; }
         h2 { font-size: 1.2em; }
         textarea { width: 100%; }
-        select { width: 100%; }
+        select, input { width: 100%; box-sizing: border-box; }
+        pre { white-space: pre-wrap; }
     </style>
 </head>
 <body>
@@ -23,9 +24,24 @@
             <select id="model-select">
                 <option value="qwen-3b">Qwen 2.5 3B</option>
                 <option value="qwen-7b">Qwen 2.5 7B</option>
-                <option value="llama-3.2-3b">Llama 3.2 3B</option>
-                <option value="gemma-4b">Gemma 3 4B</option>
+                <option value="llama-3.2">Llama 3.2 3B</option>
+                <option value="gemma-3">Gemma 3 4B</option>
             </select>
+        </fieldset>
+
+        <fieldset>
+            <legend>Baixar modelo do HuggingFace</legend>
+            <label for="repo-input">Repo (revisao main):</label>
+            <input id="repo-input" type="text" placeholder="autor/modelo-GGUF">
+            <label for="file-input">Arquivo:</label>
+            <input id="file-input" type="text" placeholder="modelo-q4_k_m.gguf">
+            <br><br>
+            <button type="button" id="list-btn">Listar arquivos</button>
+            <button type="button" id="dl-btn">Baixar e cachear</button>
+            <button type="button" id="cache-btn">Ver cache</button>
+            <p id="dl-status"></p>
+            <progress id="dl-progress" max="100" value="0" style="display:none;width:100%"></progress>
+            <div id="file-list"></div>
         </fieldset>
 
         <fieldset>
@@ -53,6 +69,7 @@
         <div id="tools-grid"></div>
     </fieldset>
 
+    <script src="models.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
