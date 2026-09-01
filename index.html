@@ -4,33 +4,54 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HemorróidaBot</title>
+    <style>
+        body { max-width: 600px; margin: 0 auto; padding: 20px; font-family: monospace; }
+        h1 { font-size: 1.8em; }
+        h2 { font-size: 1.2em; }
+        textarea { width: 100%; }
+        select { width: 100%; }
+    </style>
 </head>
 <body>
+
     <h1>HemorróidaBot</h1>
-    <p>MEGABRAIN local com JS puro</p>
+    <p>MEGABRAIN local so com JS no front-end.</p>
 
-    <h2>Modelo</h2>
-    <select id="model-select">
-        <option value="qwen-3b">Qwen 2.5 3B</option>
-        <option value="qwen-7b">Qwen 2.5 7B</option>
-        <option value="llama-3.2-3b">Llama 3.2 3B</option>
-        <option value="gemma-4b">Gemma 3 4B</option>
-    </select>
+    <form id="main-form" onsubmit="return false;">
+        <fieldset>
+            <legend>Modelo</legend>
+            <select id="model-select">
+                <option value="qwen-3b">Qwen 2.5 3B</option>
+                <option value="qwen-7b">Qwen 2.5 7B</option>
+                <option value="llama-3.2-3b">Llama 3.2 3B</option>
+                <option value="gemma-4b">Gemma 3 4B</option>
+            </select>
+        </fieldset>
 
-    <h2>Entrada</h2>
-    <button id="btn-text" onclick="setMode('text')">Texto</button>
-    <button id="btn-voice" onclick="setMode('voice')">Voz</button>
+        <fieldset>
+            <legend>Entrada</legend>
+            <label><input type="radio" name="mode" value="text" checked> Texto</label>
+            <label><input type="radio" name="mode" value="voice"> Voz</label>
+        </fieldset>
 
-    <h2>Chat</h2>
-    <div id="messages"></div>
+        <fieldset>
+            <legend>Chat</legend>
+            <div id="messages"></div>
+        </fieldset>
 
-    <h2>Mensagem</h2>
-    <textarea id="user-input" rows="3" cols="50" placeholder="Digite sua mensagem..."></textarea>
-    <br>
-    <button id="send-btn" onclick="sendMessage()">Enviar</button>
+        <fieldset>
+            <legend>Mensagem</legend>
+            <label for="user-input">Digite ou dite:</label>
+            <textarea id="user-input" rows="3" placeholder="Sua mensagem..."></textarea>
+            <br>
+            <button type="button" id="send-btn" onclick="sendMessage()">Enviar</button>
+        </fieldset>
+    </form>
 
-    <h2>Ferramentas</h2>
-    <div id="tools-grid"></div>
+    <fieldset>
+        <legend>Ferramentas locais</legend>
+        <div id="tools-grid"></div>
+    </fieldset>
 
     <script src="app.js"></script>
 </body>

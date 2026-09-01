@@ -2,8 +2,6 @@ const messagesEl = document.getElementById('messages');
 const userInput = document.getElementById('user-input');
 const modelSelect = document.getElementById('model-select');
 
-let isVoiceMode = false;
-
 const API_REGISTRY = {
   'duckduckgo':     { cat: 'web',       diff: 'easy',   url: 'https://api.duckduckgo.com/?q={q}&format=json' },
   'wikipedia':      { cat: 'web',       diff: 'easy',   url: 'https://pt.wikipedia.org/api/rest_v1/page/summary/{q}' },
@@ -53,16 +51,13 @@ const API_REGISTRY = {
   'text-counter':   { cat: 'local',     diff: 'easy',   url: null },
 };
 
-function setMode(mode) {
-  isVoiceMode = mode === 'voice';
-  userInput.placeholder = isVoiceMode ? 'Clique em gravar ou digite...' : 'Digite sua mensagem...';
-}
-
 function addMessage(text, sender) {
   const div = document.createElement('div');
   const time = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   const who = sender === 'user' ? 'Voce' : modelSelect.value;
-  div.textContent = `[${time}] ${who}: ${text}`;
+  const pre = document.createElement('pre');
+  pre.textContent = '[' + time + '] ' + who + ': ' + text;
+  div.appendChild(pre);
   messagesEl.appendChild(div);
 }
 
@@ -216,3 +211,21 @@ userInput.addEventListener('keydown', function(e) {
 
 console.log('HemorroidaBot initialized');
 console.log('APIs registradas: ' + Object.keys(API_REGISTRY).length);
+
+(function renderTools() {
+  const grid = document.getElementById('tools-grid');
+  Object.keys(API_REGISTRY).forEach(function(key) {
+    const reg = API_REGISTRY[key];
+    if (reg.cat === 'local') {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = key;
+      btn.onclick = function() {
+        addMessage(key, 'user');
+        const resp = handleLocalTool(key, key);
+        addMessage(resp, 'bot');
+      };
+      grid.appendChild(btn);
+    }
+  });
+})();
