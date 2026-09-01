@@ -1,7 +1,7 @@
 // HemorroidaBot Engine - executa .gguf via @wllama/wllama (WebAssembly llama.cpp)
 // Le o blob do Cache Storage do navegador e gera respostas 100% local.
 
-const WLLAMA_JS_URL = 'vendor/wllama/index.js';
+const WLLAMA_JS_URL = './vendor/wllama/index.js';
 const WLLAMA_WASM_DEFAULT = 'vendor/wllama/wasm/wllama.wasm';
 const WLLAMA_COMPAT_JS = 'vendor/wllama-compat/wllama.js';
 const WLLAMA_COMPAT_WASM = 'vendor/wllama-compat/wllama.wasm';
