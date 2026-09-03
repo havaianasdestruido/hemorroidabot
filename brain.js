@@ -40,7 +40,7 @@ const Brain = (function() {
     'calculator': {
       desc: 'calculadora (expressao matematica)',
       handle: function(input) {
-        const safe = input.replace(/[^0-9+\-*/().%.\s]/g, '');
+        const safe = input.replace(/[^0-9+\-*/().%.\s]/g, '').trim();
         if (!safe) return 'Expressao vazia';
         try { return '' + Function('"use strict"; return (' + safe + ')')(); }
         catch (e) { return 'Expressao invalida'; }
@@ -172,7 +172,7 @@ const Brain = (function() {
 
   // Intencoes locais por palavra-chave
   function intentLocal(text) {
-    const lower = text.toLowerCase();
+    const lower = text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
     const map = [
       [/calcular|conta|quanto e|quanto da|soma|multipl/, 'calculator'],
       [/uuid|gerar id/, 'uuid'],

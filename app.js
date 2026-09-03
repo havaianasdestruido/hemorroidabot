@@ -295,20 +295,17 @@ unloadBtn.onclick = function() {
 // ============ Render tools ============
 (function renderTools() {
   const grid = document.getElementById('tools-grid');
-  Object.keys(API_REGISTRY).forEach(function(key) {
-    const reg = API_REGISTRY[key];
-    if (reg.cat === 'local') {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.textContent = key;
-      btn.onclick = function() {
-        const text = Brain.exampleFor(key);
-        addMessage(text, 'user');
-        const resp = Brain.runLocal(key, text);
-        addMessage('[FERRAMENTA ' + key + ']\n' + resp, 'bot');
-      };
-      grid.appendChild(btn);
-    }
+  Object.keys(Brain.LOCAL_TOOLS).forEach(function(key) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = key;
+    btn.onclick = function() {
+      const text = Brain.exampleFor(key);
+      addMessage(text, 'user');
+      const resp = Brain.runLocal(key, text);
+      addMessage('[FERRAMENTA ' + key + ']\n' + resp, 'bot');
+    };
+    grid.appendChild(btn);
   });
 })();
 

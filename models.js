@@ -23,7 +23,8 @@ var ModelManager = (function() {
   // Monta URL de download de um arquivo do repo.
   function fileURL(repo, file, revision) {
     var rev = revision || 'main';
-    return 'https://huggingface.co/' + repo + '/resolve/' + rev + '/' + file;
+    var base = String(repo).replace(/\/+$/, '');
+    return 'https://huggingface.co/' + base + '/resolve/' + rev + '/' + file;
   }
 
   // Verifica se uma URL ja esta em cache (nao precisa baixar de novo).
