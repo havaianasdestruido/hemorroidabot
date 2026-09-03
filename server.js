@@ -22,6 +22,11 @@ const MIME = {
 http.createServer(function(req, res) {
   let urlPath = req.url.split('?')[0];
   if (urlPath === '/') urlPath = '/index.html';
+  if (urlPath.indexOf('..') !== -1) {
+    res.writeHead(403);
+    res.end('Forbidden');
+    return;
+  }
   urlPath = path.normalize('/' + urlPath);
   try {
     urlPath = decodeURIComponent(urlPath);
@@ -35,7 +40,6 @@ http.createServer(function(req, res) {
 
   if (
     urlPath.indexOf('\u0000') !== -1 ||
-    urlPath.indexOf('..') !== -1 ||
     !(filePath === ROOT || filePath.startsWith(ROOT + path.sep))
   ) {
     res.writeHead(403);
