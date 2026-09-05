@@ -2,7 +2,7 @@ module.exports = {
   desc: 'piada aleatoria (JokeAPI, pt)',
   match: /(piada|joke|ver um.*piada|conta.*piada|faz me rir|conta uma)/i,
   build: function() {
-    return 'https://v2.jokeapi.dev/joke/Any?lang=pt&type=single';
+    return 'https://v2.jokeapi.dev/joke/Any?lang=pt';
   },
   parse: function(data) {
     try {

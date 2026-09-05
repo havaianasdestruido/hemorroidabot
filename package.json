@@ -6,6 +6,7 @@
   "scripts": {
     "serve": "node server.js",
     "test": "node --test \"test/*.test.js\" \"test/api/*.test.js\"",
+    "test:api-live": "node test/api-live.suite.js",
     "test:inference": "node test/inference.suite.js"
   },
   "keywords": [],

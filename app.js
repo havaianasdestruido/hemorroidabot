@@ -307,6 +307,19 @@ unloadBtn.onclick = function() {
     };
     grid.appendChild(btn);
   });
+  Object.keys(Brain.EXTERNAL_TOOLS).forEach(function(key) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = 'api: ' + key;
+    btn.onclick = function() {
+      const text = Brain.externalExampleFor(key);
+      addMessage(text, 'user');
+      Brain.runExternal(key, text, { coords: coords }).then(function(resp) {
+        addMessage('[FERRAMENTA ' + key + ']\n' + resp, 'bot');
+      });
+    };
+    grid.appendChild(btn);
+  });
 })();
 
 // ============ Boot ============

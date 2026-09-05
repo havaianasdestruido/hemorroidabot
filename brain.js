@@ -308,7 +308,7 @@ const Brain = (function() {
   desc: 'piada aleatoria (JokeAPI, pt)',
   match: /(piada|joke|ver um.*piada|conta.*piada|faz me rir|conta uma)/i,
   build: function() {
-    return 'https://v2.jokeapi.dev/joke/Any?lang=pt&type=single';
+    return 'https://v2.jokeapi.dev/joke/Any?lang=pt';
   },
   parse: function(data) {
     try {
@@ -518,7 +518,7 @@ const Brain = (function() {
         break;
       }
     }
-    return 'https://universities.hipolabs.com/search?country=' + encodeURIComponent(country);
+    return 'http://universities.hipolabs.com/search?country=' + encodeURIComponent(country);
   },
   parse: function (data) {
     if (!Array.isArray(data) || data.length === 0) {
@@ -600,6 +600,31 @@ const Brain = (function() {
     return ex[tool] || tool;
   }
 
+  function externalExampleFor(tool) {
+    const ex = {
+      'wikipedia': 'o que e wikipedia brasil',
+      'open-meteo': 'clima agora',
+      'pokemon': 'info pokemon charizard',
+      'itunes': 'musica do pink floyd',
+      'npm': 'info npm lodash',
+      'dog-ceo': 'me mostra um cachorro',
+      'catfact': 'fato sobre gatos',
+      'restcountries': 'info do pais brasil',
+      'openlibrary': 'busca livro hobbit',
+      'jokeapi': 'conta uma piada',
+      'chucknorris': 'fato do chuck norris',
+      'frankfurter': 'converter 1 real em dolar',
+      'numbersapi': 'fato sobre o numero 7',
+      'ipapico': 'qual meu ip',
+      'boredapi': 'estou entediado',
+      'agify': 'qual a idade do jose',
+      'genderize': 'o nome lucas e masculino ou feminino',
+      'universities': 'busca universidades do brasil',
+      'deezer': 'busca deezer queen'
+    };
+    return ex[tool] || tool;
+  }
+
   // Executa API externa (reuso de fetch + parse) - retorna Promise<string>
   function runExternal(tool, text, state) {
     const t = EXTERNAL_TOOLS[tool];
@@ -631,6 +656,7 @@ const Brain = (function() {
     intentExternal: intentExternal,
     runLocal: runLocal,
     exampleFor: exampleFor,
+    externalExampleFor: externalExampleFor,
     runExternal: runExternal,
     LOCAL_TOOLS: LOCAL_TOOLS,
     EXTERNAL_TOOLS: EXTERNAL_TOOLS,

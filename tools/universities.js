@@ -37,7 +37,7 @@ module.exports = {
         break;
       }
     }
-    return 'https://universities.hipolabs.com/search?country=' + encodeURIComponent(country);
+    return 'http://universities.hipolabs.com/search?country=' + encodeURIComponent(country);
   },
   parse: function (data) {
     if (!Array.isArray(data) || data.length === 0) {
