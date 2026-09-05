@@ -123,6 +123,7 @@ const Brain = (function() {
   };
   const EXTERNAL_TOOLS = {
     'wikipedia': {
+      favicon: 'wikipedia.png',
       desc: 'resumo Wikipedia',
       match: /(wikipedia|wiki|o que e|quem foi|quem e|significa)/i,
       build: function(query) {
@@ -135,6 +136,7 @@ const Brain = (function() {
       }
     },
     'open-meteo': {
+      favicon: 'open-meteo.png',
       desc: 'clima atual (precisa de lat/lon)',
       match: /(clima|tempo|temperatura|previsao)/i,
       build: function(query, state) {
@@ -150,6 +152,7 @@ const Brain = (function() {
       }
     },
     'pokemon': {
+      favicon: 'pokemon.png',
       desc: 'info de Pokemon',
       match: /(poke|pokemon|pikachu|charizard)/i,
       build: function(query) {
@@ -167,6 +170,7 @@ const Brain = (function() {
       }
     },
     'itunes': {
+      favicon: 'itunes.png',
       desc: 'busca musica no iTunes',
       match: /(musica|album|banda|artista|cancao|song|track)/i,
       build: function(query) {
@@ -181,6 +185,7 @@ const Brain = (function() {
       }
     },
     'npm': {
+      favicon: 'npm.png',
       desc: 'info de pacote npm',
       match: /(npm|pacote|package|biblioteca)/i,
       build: function(query) {
@@ -195,7 +200,8 @@ const Brain = (function() {
       }
     },
     'dog-ceo': {
-  desc: 'imagem/foto aleatoria de cachorro (dog.ceo)',
+      favicon: 'dog-ceo.png',
+      desc: 'imagem/foto aleatoria de cachorro (dog.ceo)',
   match: /(cachorro|dog|doguinho|c[aã]o|foto de.*(c[aã]o|dog)|imagem de.*(c[aã]o|dog))/i,
   build: function(query) { return 'https://dog.ceo/api/breeds/image/random'; },
   parse: function(data) {
@@ -210,7 +216,8 @@ const Brain = (function() {
   }
 },
     'catfact': {
-  desc: 'curiosidade/fato sobre gatos (catfact)',
+      favicon: 'catfact.png',
+      desc: 'curiosidade/fato sobre gatos (catfact)',
   match: /(gato|cat|gatinho|bichano|felino|fato.*gato|curiosidade.*gato)/i,
   build: function(query) { return 'https://catfact.ninja/fact'; },
   parse: function(data) {
@@ -223,7 +230,8 @@ const Brain = (function() {
   }
 },
     'restcountries': {
-  desc: 'info de pais (restcountries)',
+      favicon: 'restcountries.png',
+      desc: 'info de pais (restcountries)',
   match: /(pais|country|capital|populac..o.*(pais|country)|bandeira.*(pais|country)|info.*(pais|country))/i,
   build: function(query) {
     var q = (query || '').toLowerCase();
@@ -279,7 +287,8 @@ const Brain = (function() {
   }
 },
     'openlibrary': {
-  desc: 'busca de livros (Open Library)',
+      favicon: 'openlibrary.png',
+      desc: 'busca de livros (Open Library)',
   match: /(livro|book|biblioteca|procura.*livro|busca.*livro|autor.*livro|title)/i,
   build: function(query) {
     var q = (query || '').replace(/\b(livros?|books?|buscar|procure|procura|me indica|busca|biblioteca|autor|title)\b/gi, '').replace(/\b(de|o|um|uma|do|da|dos|das)\b/gi, '').replace(/\s+/g, ' ').trim();
@@ -305,7 +314,8 @@ const Brain = (function() {
   }
 },
     'jokeapi': {
-  desc: 'piada aleatoria (JokeAPI, pt)',
+      favicon: 'jokeapi.png',
+      desc: 'piada aleatoria (JokeAPI, pt)',
   match: /(piada|joke|ver um.*piada|conta.*piada|faz me rir|conta uma)/i,
   build: function() {
     return 'https://v2.jokeapi.dev/joke/Any?lang=pt';
@@ -324,7 +334,8 @@ const Brain = (function() {
   }
 },
     'chucknorris': {
-  desc: 'piada/fato do Chuck Norris (chucknorris)',
+      favicon: 'chucknorris.png',
+      desc: 'piada/fato do Chuck Norris (chucknorris)',
   match: /(chuck|norris|chuck norris|fato.*chuck)/i,
   build: function (query) {
     var m = query.match(/(?:sobre|about|search)\s+(.+)/i);
@@ -343,7 +354,8 @@ const Brain = (function() {
   }
 },
     'frankfurter': {
-  desc: 'converte/cota moeda (Frankfurter, taxa ECB)',
+      favicon: 'frankfurter.png',
+      desc: 'converte/cota moeda (Frankfurter, taxa ECB)',
   match: /(converter?|cotaca?o|taxa|cambio|currency|moeda|eur|usd|brl|real|dolar|euro|dollar)/i,
   build: function (query, state) {
     var q = (query || '').toLowerCase();
@@ -392,7 +404,8 @@ const Brain = (function() {
   }
 },
     'numbersapi': {
-  desc: 'curiosidade sobre um numero (numbersapi)',
+      favicon: 'numbersapi.png',
+      desc: 'curiosidade sobre um numero (numbersapi)',
   match: /(numer\w*|number|fato.*numer\w*|curiosidade.*numer\w*|trivia|math fact)/i,
   build: function(query) {
     var m = query.match(/(\d+)/);
@@ -409,7 +422,8 @@ const Brain = (function() {
   }
 },
     'ipapico': {
-  desc: 'info de IP / geolocalizacao (ipapi.co)',
+      favicon: 'ipapico.png',
+      desc: 'info de IP / geolocalizacao (ipapi.co)',
   match: /(meu ip|ip publico|meu ip e|what is my ip|ip address|geolocaliza(c..o|cao)|localiza.c?ao.*ip)/i,
   build: function(query) {
     var m = query.match(/\b(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\b/);
@@ -434,7 +448,8 @@ const Brain = (function() {
   }
 },
     'boredapi': {
-  desc: 'sugestao de atividade/coisa pra fazer (boredapi)',
+      favicon: 'boredapi.png',
+      desc: 'sugestao de atividade/coisa pra fazer (boredapi)',
   match: /(entediado|bored|sugere|sugestao|algo para fazer|o que eu posso fazer|atividade|passa tempo)/i,
   build: function() {
     return 'https://www.boredapi.com/api/activity';
@@ -463,7 +478,8 @@ const Brain = (function() {
   }
 },
     'agify': {
-  desc: 'adivinha idade pelo nome (agify)',
+      favicon: 'agify.png',
+      desc: 'adivinha idade pelo nome (agify)',
   match: /(idade do\s+\w+|quantos anos tem\s+\w+|age of\s+\w+|agify|idade.*nome|nome.*idade)/i,
   build: function(query) {
     var name = 'michael';
@@ -483,7 +499,8 @@ const Brain = (function() {
   }
 },
     'genderize': {
-  desc: 'adivinha genero pelo nome (genderize)',
+      favicon: 'genderize.png',
+      desc: 'adivinha genero pelo nome (genderize)',
   match: /(masculino|feminino|genero do\s+\w+|gender of\s+\w+|eh homem ou mulher|menino ou menina|genero.*nome)/i,
   build: function(query) {
     var match = query.match(/(?:do|de|of|para)\s+(?:nome\s+)?(\w+)/i);
@@ -507,7 +524,8 @@ const Brain = (function() {
   }
 },
     'universities': {
-  desc: 'busca universidades (Hipolabs)',
+      favicon: 'universities.png',
+      desc: 'busca universidades (Hipolabs)',
   match: /(universidade|university|faculdade|faculdade.*nome|busca.*universidade|universidade.*(brasil|brazil|pais|country))/i,
   build: function (query) {
     var country = 'brazil';
@@ -536,7 +554,8 @@ const Brain = (function() {
   }
 },
     'deezer': {
-  desc: 'busca de musica/faixa (Deezer)',
+      favicon: 'deezer.png',
+      desc: 'busca de musica/faixa (Deezer)',
   match: /(deezer|faixa|ouve.*(musica|song|track)|toque.*(musica|song)|listen to|play.*song|track.*deezer|cancao.*busca)/i,
   build: function(query) {
     const q = (query || '').replace(/deezer|faixa|ouve|toque|listen to|play|musica|song|track|busca|cancao|buscar/gi, '').trim() || 'queen';
@@ -625,6 +644,90 @@ const Brain = (function() {
     return ex[tool] || tool;
   }
 
+  function chainFor(tool, text, state) {
+    const t = EXTERNAL_TOOLS[tool];
+    if (!t || !t.favicon) return [];
+    const url = t.build(text, state || {});
+    if (t.chain) return t.chain(text, state || {}, url);
+    const parsed = new URL(url, 'https://x');
+    const label = extractChainLabel(tool, text, parsed);
+    return [{ label: label, icon: t.favicon }];
+  }
+
+  function extractChainLabel(tool, text, parsed) {
+    switch (tool) {
+      case 'wikipedia': {
+        const parts = parsed.pathname.split('/');
+        const q = decodeURIComponent(parts[parts.length - 1] || '');
+        return q ? 'searching "' + q + '"' : 'consulting Wikipedia';
+      }
+      case 'open-meteo': return 'fetching weather data';
+      case 'pokemon': {
+        const parts = parsed.pathname.split('/');
+        const name = parts[parts.length - 1] || '';
+        return name ? 'looking up "' + name + '"' : 'consulting PokéAPI';
+      }
+      case 'itunes': {
+        const q = parsed.searchParams.get('term') || '';
+        return q ? 'searching iTunes for "' + q + '"' : 'searching iTunes';
+      }
+      case 'npm': {
+        const parts = parsed.pathname.split('/');
+        const pkg = parts[parts.length - 1] || '';
+        return pkg ? 'looking up npm package "' + pkg + '"' : 'consulting npm';
+      }
+      case 'dog-ceo': return 'fetching random dog image';
+      case 'catfact': return 'fetching random cat fact';
+      case 'restcountries': {
+        const parts = parsed.pathname.split('/');
+        const q = decodeURIComponent(parts[parts.length - 1] || '');
+        return q ? 'searching country "' + q + '"' : 'searching country info';
+      }
+      case 'openlibrary': {
+        const q = parsed.searchParams.get('q') || '';
+        return q ? 'searching books for "' + q + '"' : 'searching Open Library';
+      }
+      case 'jokeapi': return 'fetching a random joke';
+      case 'chucknorris': {
+        if (parsed.pathname.includes('/random')) return 'fetching Chuck Norris joke';
+        const q = parsed.searchParams.get('query') || '';
+        return q ? 'searching Chuck Norris facts for "' + q + '"' : 'fetching Chuck Norris joke';
+      }
+      case 'frankfurter': {
+        const base = parsed.searchParams.get('base') || '';
+        const syms = parsed.searchParams.get('symbols') || '';
+        return base && syms ? 'converting ' + base + ' to ' + syms : 'consulting currency rates';
+      }
+      case 'numbersapi': {
+        const parts = parsed.pathname.split('/');
+        const n = parts[1] || '42';
+        return 'fetching fact about number ' + n;
+      }
+      case 'ipapico': {
+        const ip = parsed.pathname.split('/')[1];
+        return ip && ip !== 'json' ? 'looking up IP ' + ip : 'fetching your public IP info';
+      }
+      case 'boredapi': return 'finding an activity for you';
+      case 'agify': {
+        const name = parsed.searchParams.get('name') || '';
+        return name ? 'predicting age for "' + name + '"' : 'predicting age';
+      }
+      case 'genderize': {
+        const name = parsed.searchParams.get('name') || '';
+        return name ? 'predicting gender for "' + name + '"' : 'predicting gender';
+      }
+      case 'universities': {
+        const country = parsed.searchParams.get('country') || '';
+        return country ? 'searching universities in ' + country : 'searching universities';
+      }
+      case 'deezer': {
+        const q = parsed.searchParams.get('q') || '';
+        return q ? 'searching Deezer for "' + decodeURIComponent(q) + '"' : 'searching Deezer';
+      }
+      default: return 'consulting ' + tool;
+    }
+  }
+
   // Executa API externa (reuso de fetch + parse) - retorna Promise<string>
   function runExternal(tool, text, state) {
     const t = EXTERNAL_TOOLS[tool];
@@ -657,6 +760,7 @@ const Brain = (function() {
     runLocal: runLocal,
     exampleFor: exampleFor,
     externalExampleFor: externalExampleFor,
+    chainFor: chainFor,
     runExternal: runExternal,
     LOCAL_TOOLS: LOCAL_TOOLS,
     EXTERNAL_TOOLS: EXTERNAL_TOOLS,

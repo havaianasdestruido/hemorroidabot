@@ -11,13 +11,38 @@ let voiceMode = false;
 let coords = null;
 
 // ============ Utils de DOM ============
-function addMessage(text, sender) {
+function addMessage(text, sender, opts) {
   const div = document.createElement('div');
+  div.className = 'msg msg-' + (sender || 'bot');
   const time = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   const who = sender === 'user' ? 'Voce' : modelSelect.value;
-  const pre = document.createElement('pre');
-  pre.textContent = '[' + time + '] ' + who + ': ' + text;
-  div.appendChild(pre);
+  if (opts && opts.chain && opts.chain.length) {
+    const chain = document.createElement('div');
+    chain.className = 'toolchain';
+    opts.chain.forEach(function(step) {
+      const row = document.createElement('div');
+      row.className = 'toolchain-step';
+      const img = document.createElement('img');
+      img.src = 'favicons/' + step.icon;
+      img.alt = '';
+      img.className = 'toolchain-icon';
+      const label = document.createElement('span');
+      label.className = 'toolchain-label';
+      label.textContent = step.label;
+      row.appendChild(img);
+      row.appendChild(label);
+      chain.appendChild(row);
+    });
+    const meta = document.createElement('div');
+    meta.className = 'msg-meta';
+    meta.textContent = '[' + time + '] ' + who + ' (tool call)';
+    div.appendChild(meta);
+    div.appendChild(chain);
+  } else {
+    const pre = document.createElement('pre');
+    pre.textContent = '[' + time + '] ' + who + ': ' + text;
+    div.appendChild(pre);
+  }
   messagesEl.appendChild(div);
   messagesEl.scrollTop = messagesEl.scrollHeight;
   return div;
@@ -67,23 +92,18 @@ async function handleMessage(text) {
 
   const external = Brain.intentExternal(text);
   if (external) {
-    // sem modelo: mostra o dado bruto da API
+    const chain = Brain.chainFor(external, text, { coords: coords });
+    const chainMsg = addMessage('', 'bot', { chain: chain });
+    const data = await Brain.runExternal(external, text, { coords: coords });
+    Brain.addMessage('user', text);
+    Brain.addMessage('assistant', data);
     if (!window.HemorroidaEngine || !window.HemorroidaEngine.isModelLoaded()) {
-      const data = await Brain.runExternal(external, text, { coords: coords });
-      const out = '[FERRAMENTA ' + external + ']\n' + data;
-      addMessage(out, 'bot');
-      Brain.addMessage('user', text);
-      Brain.addMessage('assistant', out);
+      addMessage(data, 'bot');
       speak(data);
       return;
     }
-    // com modelo: injeta o dado da API na memoria e deixa ele responder
-    const data = await Brain.runExternal(external, text, { coords: coords });
-    addMessage('[FERRAMENTA ' + external + ']\n' + data, 'system');
-    Brain.addMessage('user', text);
-    Brain.addMessage('assistant', '[FERRAMENTA ' + external + ']\n' + data);
     const msgs = Brain.recentMemory(12);
-    msgs.push({ role: 'user', content: 'Resuma/responda ao usuario usando a ferramenta acima: ' + text });
+    msgs.push({ role: 'user', content: 'Com base no resultado da ferramenta: ' + data + '\nResponda ao usuario: ' + text });
     msgs.unshift({ role: 'system', content: systemPrompt() });
     await engineRespond(msgs);
     return;
