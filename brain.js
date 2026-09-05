@@ -95,6 +95,32 @@ const Brain = (function() {
   };
 
   // ---- Ferramentas de API externa (assincronas) ----
+  const COUNTRY_MAP = {
+    brasil: 'brazil',
+    brazil: 'brazil',
+    alemanha: 'germany',
+    germany: 'germany',
+    frança: 'france',
+    france: 'france',
+    eua: 'united states',
+    'estados unidos': 'united states',
+    'united states': 'united states',
+    inglaterra: 'united kingdom',
+    'reino unido': 'united kingdom',
+    'united kingdom': 'united kingdom',
+    japão: 'japan',
+    japan: 'japan',
+    itália: 'italy',
+    italy: 'italy',
+    espanha: 'spain',
+    spain: 'spain',
+    portugal: 'portugal',
+    canada: 'canada',
+    australia: 'australia',
+    argentina: 'argentina',
+    méxico: 'mexico',
+    mexico: 'mexico'
+  };
   const EXTERNAL_TOOLS = {
     'wikipedia': {
       desc: 'resumo Wikipedia',
@@ -167,8 +193,367 @@ const Brain = (function() {
         const latest = (data['dist-tags'] || {}).latest || '?';
         return data.name + '@' + latest + '\n' + (data.description || '') + '\n' + (data.homepage || '');
       }
+    },
+    'dog-ceo': {
+  desc: 'imagem/foto aleatoria de cachorro (dog.ceo)',
+  match: /(cachorro|dog|doguinho|c[aã]o|foto de.*(c[aã]o|dog)|imagem de.*(c[aã]o|dog))/i,
+  build: function(query) { return 'https://dog.ceo/api/breeds/image/random'; },
+  parse: function(data) {
+    try {
+      if (data && data.status === 'success' && data.message) {
+        return 'Cachorro: ' + data.message;
+      }
+      return 'Nao foi possivel obter imagem de cachorro.';
+    } catch (e) {
+      return 'Nao foi possivel obter imagem de cachorro.';
     }
-  };
+  }
+},
+    'catfact': {
+  desc: 'curiosidade/fato sobre gatos (catfact)',
+  match: /(gato|cat|gatinho|bichano|felino|fato.*gato|curiosidade.*gato)/i,
+  build: function(query) { return 'https://catfact.ninja/fact'; },
+  parse: function(data) {
+    try {
+      if (data && data.fact) return data.fact;
+      return 'Nao foi possivel obter fato sobre gatos.';
+    } catch (e) {
+      return 'Nao foi possivel obter fato sobre gatos.';
+    }
+  }
+},
+    'restcountries': {
+  desc: 'info de pais (restcountries)',
+  match: /(pais|country|capital|populac..o.*(pais|country)|bandeira.*(pais|country)|info.*(pais|country))/i,
+  build: function(query) {
+    var q = (query || '').toLowerCase();
+    var words = q.split(/\s+/);
+    var skip = /^(pais|country|capital|populac..o|bandeira|info|do|da|de|dos|das|o|a|um|uma|qual|quais|me|mostre|informacoes|sobre)$/i;
+    var name = '';
+    for (var i = 0; i < words.length; i++) {
+      if (!skip.test(words[i]) && words[i].length > 1) {
+        name = words[i];
+        break;
+      }
+    }
+    if (!name) name = 'brazil';
+    return 'https://restcountries.com/v3.1/name/' + encodeURIComponent(name);
+  },
+  parse: function(data) {
+    try {
+      if (!data || !Array.isArray(data) || data.length === 0) {
+        return 'Pais nao encontrado.';
+      }
+      var c = data[0];
+      if (!c) return 'Pais nao encontrado.';
+      var name = '';
+      try { name = c.name.common || ''; } catch (e) { name = '?'; }
+      var capital = '';
+      try { capital = (c.capital && c.capital[0]) || 'N/A'; } catch (e) { capital = 'N/A'; }
+      var region = '';
+      try { region = c.region || 'N/A'; } catch (e) { region = 'N/A'; }
+      var pop = 0;
+      try { pop = c.population || 0; } catch (e) { pop = 0; }
+      var popStr = pop.toLocaleString('pt-BR');
+      var flag = '';
+      try { flag = (c.flags && c.flags.png) || ''; } catch (e) { flag = ''; }
+      var currencies = '';
+      try {
+        if (c.currencies) {
+          var keys = Object.keys(c.currencies);
+          if (keys.length > 0) {
+            currencies = keys.map(function(k) { return c.currencies[k].name; }).join(', ');
+          }
+        }
+      } catch (e) { currencies = ''; }
+      var out = 'Pais: ' + name +
+        '\nCapital: ' + capital +
+        '\nRegiao: ' + region +
+        '\nPopulacao: ' + popStr;
+      if (currencies) out += '\nMoeda: ' + currencies;
+      if (flag) out += '\nBandeira: ' + flag;
+      return out;
+    } catch (e) {
+      return 'Pais nao encontrado.';
+    }
+  }
+},
+    'openlibrary': {
+  desc: 'busca de livros (Open Library)',
+  match: /(livro|book|biblioteca|procura.*livro|busca.*livro|autor.*livro|title)/i,
+  build: function(query) {
+    var q = (query || '').replace(/\b(livros?|books?|buscar|procure|procura|me indica|busca|biblioteca|autor|title)\b/gi, '').replace(/\b(de|o|um|uma|do|da|dos|das)\b/gi, '').replace(/\s+/g, ' ').trim();
+    if (!q) q = 'hobbit';
+    return 'https://openlibrary.org/search.json?q=' + encodeURIComponent(q) + '&limit=3';
+  },
+  parse: function(data) {
+    try {
+      if (!data || !data.docs || !data.docs.length) return 'Nenhum livro encontrado.';
+      var lines = [];
+      for (var i = 0; i < data.docs.length && i < 3; i++) {
+        var doc = data.docs[i];
+        var title = doc.title || 'Sem titulo';
+        var authors = (doc.author_name && doc.author_name.length) ? doc.author_name.join(', ') : 'Autor desconhecido';
+        var year = doc.first_publish_year || 'N/D';
+        var link = 'https://openlibrary.org' + (doc.key || '');
+        lines.push(title + ' (' + authors + ', ' + year + ') | ' + link);
+      }
+      return lines.join('\n');
+    } catch (e) {
+      return 'Nenhum livro encontrado.';
+    }
+  }
+},
+    'jokeapi': {
+  desc: 'piada aleatoria (JokeAPI, pt)',
+  match: /(piada|joke|ver um.*piada|conta.*piada|faz me rir|conta uma)/i,
+  build: function() {
+    return 'https://v2.jokeapi.dev/joke/Any?lang=pt&type=single';
+  },
+  parse: function(data) {
+    try {
+      if (!data || data.error) return 'Nao consegui uma piada.';
+      if (data.type === 'twopart' && data.setup && data.delivery) {
+        return data.setup + '\n' + data.delivery;
+      }
+      if (data.joke) return data.joke;
+      return 'Nao consegui uma piada.';
+    } catch (e) {
+      return 'Nao consegui uma piada.';
+    }
+  }
+},
+    'chucknorris': {
+  desc: 'piada/fato do Chuck Norris (chucknorris)',
+  match: /(chuck|norris|chuck norris|fato.*chuck)/i,
+  build: function (query) {
+    var m = query.match(/(?:sobre|about|search)\s+(.+)/i);
+    if (m && m[1] && m[1].trim().length > 0) {
+      return 'https://api.chucknorris.io/jokes/search?query=' + encodeURIComponent(m[1].trim());
+    }
+    return 'https://api.chucknorris.io/jokes/random';
+  },
+  parse: function (data) {
+    if (!data) return 'Chuck Norris facts unavailable.';
+    if (data.value && typeof data.value === 'string') return data.value;
+    if (data.result && Array.isArray(data.result) && data.result.length > 0) {
+      return data.result[0].value;
+    }
+    return 'Chuck Norris facts unavailable.';
+  }
+},
+    'frankfurter': {
+  desc: 'converte/cota moeda (Frankfurter, taxa ECB)',
+  match: /(converter?|cotaca?o|taxa|cambio|currency|moeda|eur|usd|brl|real|dolar|euro|dollar)/i,
+  build: function (query, state) {
+    var q = (query || '').toLowerCase();
+    var base = 'USD';
+    var symbols = 'BRL';
+    var map = {
+      usd: 'USD', dolar: 'USD', dollar: 'USD',
+      brl: 'BRL', real: 'BRL', reais: 'BRL',
+      eur: 'EUR', euro: 'EUR',
+      gbp: 'GBP', libra: 'GBP',
+      jpy: 'JPY', chf: 'CHF',
+      cad: 'CAD', aud: 'AUD', cny: 'CNY'
+    };
+    var tokens = q.split(/[\s,;.!?]+/);
+    var found = [];
+    for (var i = 0; i < tokens.length; i++) {
+      if (map[tokens[i]]) found.push(map[tokens[i]]);
+    }
+    if (found.length >= 2) {
+      base = found[0];
+      symbols = found[1];
+    } else if (found.length === 1) {
+      var em = q.match(/\b(em|to|in|para)\b\s+(\w+)/);
+      if (em && map[em[2]]) {
+        base = found[0];
+        symbols = map[em[2]];
+      } else {
+        symbols = found[0];
+      }
+    }
+    return 'https://api.frankfurter.dev/v1/latest?base=' + encodeURIComponent(base) + '&symbols=' + encodeURIComponent(symbols);
+  },
+  parse: function (data) {
+    try {
+      if (!data || !data.base || !data.rates) return 'moeda indispon\u00EDvel';
+      var keys = Object.keys(data.rates);
+      if (keys.length === 0) return 'moeda indispon\u00EDvel';
+      var out = [];
+      for (var i = 0; i < keys.length; i++) {
+        out.push('1 ' + data.base + ' = ' + data.rates[keys[i]] + ' ' + keys[i]);
+      }
+      return out.join(' | ');
+    } catch (e) {
+      return 'moeda indispon\u00EDvel';
+    }
+  }
+},
+    'numbersapi': {
+  desc: 'curiosidade sobre um numero (numbersapi)',
+  match: /(numer\w*|number|fato.*numer\w*|curiosidade.*numer\w*|trivia|math fact)/i,
+  build: function(query) {
+    var m = query.match(/(\d+)/);
+    var num = m ? m[1] : '42';
+    return 'https://numbersapi.com/' + num + '?json';
+  },
+  parse: function(data) {
+    try {
+      if (data && typeof data.text === 'string' && data.text.length > 0) return data.text;
+      return 'Nao foi possivel obter curiosidade sobre o numero.';
+    } catch (e) {
+      return 'Nao foi possivel obter curiosidade sobre o numero.';
+    }
+  }
+},
+    'ipapico': {
+  desc: 'info de IP / geolocalizacao (ipapi.co)',
+  match: /(meu ip|ip publico|meu ip e|what is my ip|ip address|geolocaliza(c..o|cao)|localiza.c?ao.*ip)/i,
+  build: function(query) {
+    var m = query.match(/\b(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\b/);
+    if (m) return 'https://ipapi.co/' + m[1] + '/json/';
+    return 'https://ipapi.co/json/';
+  },
+  parse: function(data) {
+    if (!data || typeof data !== 'object') return 'Dados indisponiveis.';
+    var ip = data.ip || '-';
+    var city = data.city || '-';
+    var region = data.region || '-';
+    var country = data.country_name || '-';
+    var lat = data.latitude != null ? data.latitude : '-';
+    var lon = data.longitude != null ? data.longitude : '-';
+    var tz = data.timezone || '-';
+    return 'IP: ' + ip + '\n' +
+      'Cidade: ' + city + '\n' +
+      'Regiao: ' + region + '\n' +
+      'Pais: ' + country + '\n' +
+      'Lat/Lon: ' + lat + ', ' + lon + '\n' +
+      'Fuso horario: ' + tz;
+  }
+},
+    'boredapi': {
+  desc: 'sugestao de atividade/coisa pra fazer (boredapi)',
+  match: /(entediado|bored|sugere|sugestao|algo para fazer|o que eu posso fazer|atividade|passa tempo)/i,
+  build: function() {
+    return 'https://www.boredapi.com/api/activity';
+  },
+  parse: function(data) {
+    try {
+      if (!data || typeof data !== 'object') {
+        return 'Atividade indisponível no momento. Tente novamente.';
+      }
+      var activity = data.activity || 'Atividade desconhecida';
+      var type = data.type || 'desconhecido';
+      var participants = data.participants != null ? String(data.participants) : '?';
+      var price = data.price != null ? data.price : null;
+      var priceStr;
+      if (price === null) {
+        priceStr = 'Preço desconhecido';
+      } else if (price === 0) {
+        priceStr = 'Grátis';
+      } else {
+        priceStr = price + '/5';
+      }
+      return activity + '\nTipo: ' + type + '\nParticipantes: ' + participants + '\nPreço: ' + priceStr;
+    } catch (e) {
+      return 'Erro ao processar atividade.';
+    }
+  }
+},
+    'agify': {
+  desc: 'adivinha idade pelo nome (agify)',
+  match: /(idade do\s+\w+|quantos anos tem\s+\w+|age of\s+\w+|agify|idade.*nome|nome.*idade)/i,
+  build: function(query) {
+    var name = 'michael';
+    var m = query.match(/(?:idade do|quantos anos tem|age of|do|tem|of|para|nome?)\s+([A-Za-zÀ-ÿ]+)/i);
+    if (m && m[1]) name = m[1].toLowerCase();
+    return 'https://api.agify.io/?name=' + encodeURIComponent(name);
+  },
+  parse: function(data) {
+    try {
+      if (!data || typeof data !== 'object' || data.age == null) {
+        return 'Nao foi possivel prever a idade.';
+      }
+      return 'Idade media para "' + data.name + '": ' + data.age + ' anos (base de ' + data.count + ' pessoas).';
+    } catch (e) {
+      return 'Nao foi possivel prever a idade.';
+    }
+  }
+},
+    'genderize': {
+  desc: 'adivinha genero pelo nome (genderize)',
+  match: /(masculino|feminino|genero do\s+\w+|gender of\s+\w+|eh homem ou mulher|menino ou menina|genero.*nome)/i,
+  build: function(query) {
+    var match = query.match(/(?:do|de|of|para)\s+(?:nome\s+)?(\w+)/i);
+    var name = match ? match[1] : 'emily';
+    return 'https://api.genderize.io/?name=' + encodeURIComponent(name);
+  },
+  parse: function(data) {
+    try {
+      if (!data || !data.name) return 'Nao foi possivel determinar o genero.';
+      var gender = data.gender;
+      var genderPt = gender === 'female' ? 'feminino' : gender === 'male' ? 'masculino' : 'indeterminado';
+      var prob = data.probability != null ? Math.round(data.probability * 100) : 0;
+      var count = data.count || 0;
+      if (gender === null || gender === undefined) {
+        return 'O nome "' + data.name + '" tem genero indeterminado.';
+      }
+      return 'O nome "' + data.name + '" e provavelmente ' + genderPt + ' (confianca ' + prob + '%, base de ' + count + ').';
+    } catch (e) {
+      return 'Nao foi possivel determinar o genero.';
+    }
+  }
+},
+    'universities': {
+  desc: 'busca universidades (Hipolabs)',
+  match: /(universidade|university|faculdade|faculdade.*nome|busca.*universidade|universidade.*(brasil|brazil|pais|country))/i,
+  build: function (query) {
+    var country = 'brazil';
+    var lower = (query || '').toLowerCase();
+    for (var key in COUNTRY_MAP) {
+      if (lower.indexOf(key) !== -1) {
+        country = COUNTRY_MAP[key];
+        break;
+      }
+    }
+    return 'https://universities.hipolabs.com/search?country=' + encodeURIComponent(country);
+  },
+  parse: function (data) {
+    if (!Array.isArray(data) || data.length === 0) {
+      return 'Nenhuma universidade encontrada.';
+    }
+    var results = data.slice(0, 3);
+    var lines = [];
+    for (var i = 0; i < results.length; i++) {
+      var u = results[i];
+      var name = u.name || 'Desconhecida';
+      var site = (u.web_pages && u.web_pages.length > 0) ? u.web_pages[0] : 'Sem site';
+      lines.push(name + ' | ' + site);
+    }
+    return lines.join('\n');
+  }
+},
+    'deezer': {
+  desc: 'busca de musica/faixa (Deezer)',
+  match: /(deezer|faixa|ouve.*(musica|song|track)|toque.*(musica|song)|listen to|play.*song|track.*deezer|cancao.*busca)/i,
+  build: function(query) {
+    const q = (query || '').replace(/deezer|faixa|ouve|toque|listen to|play|musica|song|track|busca|cancao|buscar/gi, '').trim() || 'queen';
+    return 'https://api.deezer.com/search?q=' + encodeURIComponent(q) + '&limit=3';
+  },
+  parse: function(data) {
+    try {
+      if (!data || !data.data || !data.data.length) return 'Nenhuma faixa encontrada.';
+      return data.data.map(function(item) {
+        return item.title + ' - ' + (item.artist && item.artist.name) + ' (' + (item.album && item.album.title) + ', ' + item.duration + 's)\npreview: ' + item.preview;
+      }).join('\n');
+    } catch (e) {
+      return 'Nenhuma faixa encontrada.';
+    }
+  }
+},
+};
 
   // Intencoes locais por palavra-chave
   function intentLocal(text) {
