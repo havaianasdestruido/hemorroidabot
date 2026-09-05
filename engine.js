@@ -124,24 +124,24 @@ async function chat(messages, opts) {
   let tk = 0; // aprox: chars/4
   const t0 = performance.now();
 
-  const params = {
+  // createChatCompletion com stream:true nao emite dados neste build de wllama
+  // (retorna vazio). Usamos stream:false e lemos o conteudo final do objeto.
+  const res = await engine.createChatCompletion({
     messages: msgs,
     n_predict: maxTokens,
     temperature: opts.temperature || 0.7,
     top_k: 40,
     top_p: 0.9,
-    stream: true,
-    onData: function(data) {
-      if (data && data.choices && data.choices.length) {
-        const delta = data.choices[0].text || '';
-        full += delta;
-        tk += delta.length;
-        if (typeof opts.onToken === 'function') opts.onToken(delta);
-      }
-    }
-  };
+    stream: false
+  });
 
-  await engine.createChatCompletion(params);
+  if (res && res.choices && res.choices.length && res.choices[0].message) {
+    full = res.choices[0].message.content || '';
+  } else if (typeof res === 'string') {
+    full = res;
+  }
+  tk = full.length;
+  if (full && typeof opts.onToken === 'function') opts.onToken(full);
 
   const ms = performance.now() - t0;
   const perf = {

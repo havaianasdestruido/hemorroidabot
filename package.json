@@ -5,7 +5,8 @@
   "main": "app.js",
   "scripts": {
     "serve": "node server.js",
-    "test": "node --test \"test/*.test.js\""
+    "test": "node --test \"test/*.test.js\"",
+    "test:inference": "node test/inference.suite.js"
   },
   "keywords": [],
   "author": "",
@@ -14,5 +15,8 @@
   "dependencies": {
     "@wllama/wllama": "^3.6.1",
     "@wllama/wllama-compat": "^3.6.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.1"
   }
 }
