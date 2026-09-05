@@ -43,31 +43,31 @@ test('GET / returns 200 and contains <title>HemorróidaBot</title>', async () =>
   assert.ok(body.includes('<title>HemorróidaBot</title>'));
 });
 
-test('GET /index.html returns 200 and Content-Type starts with text/html', async () => {
-  const res = await fetch(`${BASE}/index.html`);
+test('GET /src/index.html returns 200 and Content-Type starts with text/html', async () => {
+  const res = await fetch(`${BASE}/src/index.html`);
   assert.equal(res.status, 200);
   const ct = res.headers.get('content-type');
   assert.ok(ct.startsWith('text/html'), `Expected text/html, got ${ct}`);
 });
 
-test('GET /brain.js returns 200 and Content-Type is text/javascript', async () => {
-  const res = await fetch(`${BASE}/brain.js`);
+test('GET /src/brain.js returns 200 and Content-Type is text/javascript', async () => {
+  const res = await fetch(`${BASE}/src/brain.js`);
   assert.equal(res.status, 200);
   assert.equal(res.headers.get('content-type'), 'text/javascript; charset=utf-8');
 });
 
-test('GET /engine.js returns 200', async () => {
-  const res = await fetch(`${BASE}/engine.js`);
+test('GET /src/engine.js returns 200', async () => {
+  const res = await fetch(`${BASE}/src/engine.js`);
   assert.equal(res.status, 200);
 });
 
-test('GET /models.js returns 200', async () => {
-  const res = await fetch(`${BASE}/models.js`);
+test('GET /src/models.js returns 200', async () => {
+  const res = await fetch(`${BASE}/src/models.js`);
   assert.equal(res.status, 200);
 });
 
-test('GET /app.js returns 200', async () => {
-  const res = await fetch(`${BASE}/app.js`);
+test('GET /src/app.js returns 200', async () => {
+  const res = await fetch(`${BASE}/src/app.js`);
   assert.equal(res.status, 200);
 });
 
@@ -78,7 +78,7 @@ test('GET /vendor/wllama-compat/wllama.wasm returns 200 with application/wasm', 
 });
 
 test('200 responses include COOP and COEP headers', async () => {
-  const res = await fetch(`${BASE}/index.html`);
+  const res = await fetch(`${BASE}/src/index.html`);
   assert.equal(res.status, 200);
   assert.equal(res.headers.get('cross-origin-opener-policy'), 'same-origin');
   assert.equal(res.headers.get('cross-origin-embedder-policy'), 'require-corp');

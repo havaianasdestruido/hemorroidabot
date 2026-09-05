@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+const html = fs.readFileSync(path.join(__dirname, '..', 'src', 'index.html'), 'utf8');
 
 describe('index.html structure', () => {
 
@@ -25,19 +25,19 @@ describe('index.html structure', () => {
     });
   }
 
-  const moduleScripts = ['models.js', 'brain.js', 'app.js', 'engine.js'];
+  const moduleScripts = ['src/models.js', 'src/brain.js', 'src/app.js', 'src/engine.js'];
 
   for (const src of moduleScripts) {
     it(`<script> includes ${src}`, () => {
-      const re = new RegExp(`<script[^>]*src=["']${src}["']`, 'i');
+      const re = new RegExp(`<script[^>]*src=["']${src.replace('/', '\\/')}["']`, 'i');
       assert.ok(re.test(html), `<script src="${src}"> not found`);
     });
   }
 
   it('engine.js is loaded as type="module"', () => {
     assert.ok(
-      /<script[^>]*type=["']module["'][^>]*src=["']engine\.js["']/.test(html) ||
-      /<script[^>]*src=["']engine\.js["'][^>]*type=["']module["']/.test(html),
+      /<script[^>]*type=["']module["'][^>]*src=["']src\/engine\.js["']/.test(html) ||
+      /<script[^>]*src=["']src\/engine\.js["'][^>]*type=["']module["']/.test(html),
       'engine.js is not loaded as type="module"'
     );
   });
@@ -58,11 +58,11 @@ describe('index.html structure', () => {
         }
       }
     }
-    assert.deepEqual(moduleSrcs, ['engine.js']);
+    assert.deepEqual(moduleSrcs, ['src/engine.js']);
     assert.deepEqual(
       plainSrcs.sort(),
-      ['app.js', 'brain.js', 'models.js'].sort(),
-      `expected models.js/brain.js/app.js as plain scripts; got: ${plainSrcs.join(', ')}`
+      ['src/app.js', 'src/brain.js', 'src/models.js'].sort(),
+      `expected src/models.js/src/brain.js/src/app.js as plain scripts; got: ${plainSrcs.join(', ')}`
     );
   });
 

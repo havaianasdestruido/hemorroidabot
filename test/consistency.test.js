@@ -7,13 +7,13 @@ const path = require('node:path');
 const ROOT = path.join(__dirname, '..');
 const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
 
-const html = read('index.html');
-const appJs = read('app.js');
-const brainJs = read('brain.js');
-const engineJs = read('engine.js');
-const modelsJs = read('models.js');
-const serverJs = read('server.js');
-const pkg = JSON.parse(read('package.json'));
+const html = read('src/index.html');
+  const appJs = read('src/app.js');
+  const brainJs = read('src/brain.js');
+  const engineJs = read('src/engine.js');
+  const modelsJs = read('src/models.js');
+  const serverJs = read('server.js');
+  const pkg = JSON.parse(read('package.json'));
 
 function lineAt(text, pos) {
   let n = 1;
@@ -265,11 +265,11 @@ describe('consistency: script load order (index.html)', () => {
       for (const i of candidates) if (i >= 0) return i;
       return -1;
     };
-    const modelIdx = findScript('models.js');
-    const brainIdx = findScript('brain.js');
-    const appIdx = findScript('app.js');
-    const engineIdx = findScript('engine.js');
-    assert.ok(modelIdx >= 0 && brainIdx >= 0 && appIdx >= 0 && engineIdx >= 0, 'one of models.js/brain.js/app.js/engine.js not loaded by index.html');
+    const modelIdx = findScript('src/models.js');
+    const brainIdx = findScript('src/brain.js');
+    const appIdx = findScript('src/app.js');
+    const engineIdx = findScript('src/engine.js');
+    assert.ok(modelIdx >= 0 && brainIdx >= 0 && appIdx >= 0 && engineIdx >= 0, 'one of src/models.js/src/brain.js/src/app.js/src/engine.js not loaded by index.html');
     assert.ok(modelIdx < brainIdx, 'models.js must load before brain.js');
     assert.ok(brainIdx < appIdx, 'brain.js must load before app.js');
     assert.ok(appIdx < engineIdx, 'app.js must load before engine.js');

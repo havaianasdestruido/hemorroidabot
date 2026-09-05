@@ -144,7 +144,7 @@ for (const p of TRAVERSALS) {
 }
 
 test('server survives all traversal attempts', async () => {
-  const res = await fetch(`${BASE}/index.html`);
+  const res = await fetch(`${BASE}/src/index.html`);
   assert.equal(res.status, 200);
 });
 
@@ -162,14 +162,14 @@ for (const p of MALFORMED) {
 }
 
 test('server survives malformed encodings', async () => {
-  const res = await fetch(`${BASE}/index.html`);
+  const res = await fetch(`${BASE}/src/index.html`);
   assert.equal(res.status, 200);
 });
 
 test('double-encoded null byte does not crash and returns 404', async () => {
   const res = await rawRequest('/%2500.jpg');
   assert.equal(res.status, 404);
-  const ok = await fetch(`${BASE}/index.html`);
+  const ok = await fetch(`${BASE}/src/index.html`);
   assert.equal(ok.status, 200);
 });
 
@@ -193,15 +193,15 @@ test('unknown extension falls back to application/octet-stream', async () => {
   assert.equal(res.headers.get('content-type'), 'application/octet-stream');
 });
 
-test('query string on asset: /index.html?x=1', async () => {
-  const res = await fetch(`${BASE}/index.html?x=1`);
+test('query string on asset: /src/index.html?x=1', async () => {
+  const res = await fetch(`${BASE}/src/index.html?x=1`);
   assert.equal(res.status, 200);
   const body = await res.text();
   assert.ok(body.includes('<title>HemorróidaBot</title>'));
 });
 
-test('query string on js asset: /engine.js?cb=123', async () => {
-  const res = await fetch(`${BASE}/engine.js?cb=123`);
+test('query string on js asset: /src/engine.js?cb=123', async () => {
+  const res = await fetch(`${BASE}/src/engine.js?cb=123`);
   assert.equal(res.status, 200);
   assert.equal(res.headers.get('content-type'), 'text/javascript; charset=utf-8');
 });
@@ -213,20 +213,20 @@ test('trailing slash /vendor/ does not serve directory listing', async () => {
   assert.ok(!/<a href/i.test(body), 'directory listing leaked');
 });
 
-test('HEAD /index.html returns 200, empty body, COOP/COEP present', async () => {
-  const res = await fetch(`${BASE}/index.html`, { method: 'HEAD' });
+test('HEAD /src/index.html returns 200, empty body, COOP/COEP present', async () => {
+  const res = await fetch(`${BASE}/src/index.html`, { method: 'HEAD' });
   assert.equal(res.status, 200);
   const body = await res.text();
   assert.equal(body.length, 0);
   assert.equal(res.headers.get('cross-origin-opener-policy'), 'same-origin');
   assert.equal(res.headers.get('cross-origin-embedder-policy'), 'require-corp');
   const cl = res.headers.get('content-length');
-  const realSize = fs.statSync(path.join(CWD, 'index.html')).size;
+  const realSize = fs.statSync(path.join(CWD, 'src', 'index.html')).size;
   assert.ok(cl === null || cl === '0' || Number(cl) === realSize, `content-length ${cl}`);
 });
 
-test('case sensitivity /INDEX.HTML observed behavior', async () => {
-  const res = await fetch(`${BASE}/INDEX.HTML`);
+test('case sensitivity /SRC/INDEX.HTML observed behavior', async () => {
+  const res = await fetch(`${BASE}/SRC/INDEX.HTML`);
   assert.ok(res.status === 200 || res.status === 404, `status ${res.status}`);
   if (res.status === 200) {
     const body = await res.text();
@@ -245,7 +245,7 @@ test('very long URL path does not crash server', async () => {
     assert.fail('long URL crashed or hung: ' + err.message);
   }
   assert.ok(status === 404 || status >= 400, `long path status ${status}`);
-  const ok = await fetch(`${BASE}/index.html`);
+  const ok = await fetch(`${BASE}/src/index.html`);
   assert.equal(ok.status, 200);
 });
 

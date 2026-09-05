@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = __dirname;
+const SRC = path.join(__dirname, 'src');
 const PORT = process.env.PORT || 8080;
 
 const MIME = {
@@ -21,7 +22,7 @@ const MIME = {
 
 http.createServer(function(req, res) {
   let urlPath = req.url.split('?')[0];
-  if (urlPath === '/') urlPath = '/index.html';
+  if (urlPath === '/') urlPath = '/src/index.html';
   if (urlPath.indexOf('..') !== -1) {
     res.writeHead(403);
     res.end('Forbidden');

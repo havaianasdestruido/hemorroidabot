@@ -24,8 +24,8 @@ jobs:
         run: npm test
       - name: Syntax check (browser JS)
         run: |
-          node --check app.js
-          node --check brain.js
-          node --check models.js
+          node --check src/app.js
+          node --check src/brain.js
+          node --check src/models.js
           node --check server.js
-          node --input-type=module --check < engine.js
+          node --input-type=module --check < src/engine.js

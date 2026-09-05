@@ -95,7 +95,7 @@ describe('central merge: tools/*.js <-> Brain.EXTERNAL_TOOLS', () => {
   for (const name of Object.keys(APIS)) {
     const api = APIS[name];
     test(name + ': source module and Brain entry agree', () => {
-      const src = require(path.join(PATH, 'tools', name + '.js'));
+      const src = require(path.join(__dirname, '..', 'tools', name + '.js'));
       const entry = Brain.EXTERNAL_TOOLS[name];
       assert.ok(entry, 'Brain.EXTERNAL_TOOLS missing key "' + name + '"');
       assert.strictEqual(entry.desc, src.desc, name + ': desc divergiu do source');
@@ -124,7 +124,7 @@ describe('central merge: tools/*.js <-> Brain.EXTERNAL_TOOLS', () => {
 describe('central merge: integridade do registro', () => {
   test('todos os keys tools/*.js estao em EXTERNAL_TOOLS', () => {
     const fs = require('node:fs');
-    const files = fs.readdirSync(path.join(PATH, 'tools')).filter((f) => f.endsWith('.js')).map((f) => f.replace(/\.js$/, ''));
+    const files = fs.readdirSync(path.join(__dirname, '..', 'tools')).filter((f) => f.endsWith('.js')).map((f) => f.replace(/\.js$/, ''));
     const missing = files.filter((f) => !Brain.EXTERNAL_TOOLS[f]);
     assert.deepEqual(missing, [], 'ferramentas ausentes de EXTERNAL_TOOLS: ' + missing.join(', '));
   });

@@ -6,7 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 
-const PATH = path.resolve(__dirname, '..');
+const PATH = path.join(__dirname, '..', 'src');
 
 function makeLocalStorage() {
   const store = new Map();
