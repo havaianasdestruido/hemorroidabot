@@ -1,0 +1,74 @@
+# GitHub PR Labeler Configuration for hemorroidabot
+# This file automatically labels pull requests based on the files changed
+
+# Core Application Files
+frontend:
+  - any:
+    - src/**
+    - '*.html'
+    - 'favicons/**'
+
+backend:
+  - server.js
+
+tests:
+  - any:
+    - test/**
+    - '**/*.test.js'
+
+documentation:
+  - README.md
+  - '*.md'
+
+config:
+  - any:
+    - package.json
+    - package-lock.json
+    - .gitignore
+    - '.github/**'
+
+dependencies:
+  - any:
+    - package.json
+    - package-lock.json
+
+tools:
+  - tools/**
+
+vendor:
+  - vendor/**
+
+# Type-based Labels
+"type: bug":
+  - body:
+    - '/bug/i'
+    - '/fix/i'
+    - '/issue/i'
+
+"type: feature":
+  - body:
+    - '/feature/i'
+    - '/enhancement/i'
+    - '/new/i'
+
+"type: chore":
+  - body:
+    - '/chore/i'
+    - '/refactor/i'
+
+"type: docs":
+  - documentation:
+    - any:
+      - README.md
+      - '*.md'
+
+# Size-based Labels (requires action)
+"size: small":
+  - any:
+    - branch:
+      - '/^(?!.{10})/'
+
+"size: large":
+  - any:
+    - branch:
+      - '/^(?=.{50,})/'
