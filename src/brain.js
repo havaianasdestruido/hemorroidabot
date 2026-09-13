@@ -572,7 +572,124 @@ const Brain = (function() {
     }
   }
 },
-};
+    'lastfm': {
+      favicon: 'lastfm.png',
+      desc: 'ultimo scrobble/musica ouvida (ListenBrainz, keyless)',
+      match: /(ultimo scrobble|ultima scrobble|ultimo listen|ultima musica ouvida|ultima tocada|last scrobble|last listen|scrobble do|scrobble de)/i,
+      build: function(query) {
+        var m = query.match(/(?:do|de|of|user|usuario)\s+(\w+)/i);
+        var user = (m && m[1]) ? m[1].toLowerCase() : 'rj';
+        return 'https://api.listenbrainz.org/1/user/' + encodeURIComponent(user) + '/listens?count=1';
+      },
+      parse: function(data) {
+        if (!data || !data.payload || !Array.isArray(data.payload.listens) || data.payload.listens.length === 0) {
+          return 'Nenhum scrobble encontrado para esse usuario.';
+        }
+        var l = data.payload.listens[0];
+        var t = l.track_metadata || {};
+        var played = l.played_at ? new Date(l.played_at * 1000).toISOString().slice(0, 16).replace('T', ' ') : 'data desconhecida';
+        return 'Ultimo scrobble: "' + (t.track_name || '?') + '" por ' + (t.artist_name || '?') + ' (' + (t.release_name || 'sem album') + ', ' + played + ' UTC)';
+      }
+    },
+    'wttr': {
+      favicon: 'wttr.png',
+      desc: 'previsao do tempo detalhada (wttr.in, keyless)',
+      match: /(wttr|previsao completa|clima completo|tempo agora em|weather json)/i,
+      build: function(query, state) {
+        var q = (query || '').replace(/(wttr|previsao completa|clima completo|tempo agora em|weather json|clima em|tempo em|previsao do tempo em)/gi, '').replace(/[?.!]/g, '').trim();
+        if (q) return 'https://wttr.in/' + encodeURIComponent(q) + '?format=j1&lang=pt';
+        var c = state.coords || { lat: 0, lon: 0 };
+        return 'https://wttr.in/' + c.lat + ',' + c.lon + '?format=j1&lang=pt';
+      },
+      parse: function(data) {
+        try {
+          if (!data || !data.current_condition || !data.current_condition.length) return 'Sem dados de clima.';
+          var c = data.current_condition[0];
+          var desc = (c.weatherDesc && c.weatherDesc[0] && c.weatherDesc[0].value) || 'desconhecido';
+          var temp = c.temp_C != null ? c.temp_C : '?';
+          var feels = c.FeelsLikeC != null ? c.FeelsLikeC : '?';
+          var hum = c.humidity != null ? c.humidity : '?';
+          var wind = c.windspeedKmph != null ? c.windspeedKmph : '?';
+          var area = '';
+          if (data.nearest_area && data.nearest_area[0]) {
+            var a = data.nearest_area[0];
+            var name = (a.areaName && a.areaName[0] && a.areaName[0].value) || '';
+            var country = (a.country && a.country[0] && a.country[0].value) || '';
+            area = (name || '') + (country ? ', ' + country : '');
+          }
+          var head = area ? 'Clima em ' + area + ':\n' : '';
+          return head + 'Atual: ' + desc + ', ' + temp + '°C (sensacao ' + feels + '°C)\nUmidade: ' + hum + '%\nVento: ' + wind + ' km/h';
+        } catch (e) {
+          return 'Erro ao processar clima.';
+        }
+      }
+    },
+    'coingecko': {
+      favicon: 'coingecko.png',
+      desc: 'preco de cripto (CoinGecko, keyless)',
+      match: /(preco.*(btc|bitcoin|eth|ethereum|doge|dogecoin|ltc|litecoin|cardano|ada|solana|sol|xrp|ripple|bnb|tether|usdt|cripto|crypto|moeda digital)|valor.*(btc|bitcoin|eth|ethereum)|cotaca[cço].*(btc|bitcoin|eth|ethereum)|cripto.*hoje|crypto.*price|quanto.*(ta|esta|custa|vale).*(btc|bitcoin|eth|ethereum|doge|dogecoin|ltc|litecoin|cardano|ada|solana|sol|xrp|ripple|bnb|tether|usdt|cripto|crypto))/i,
+      build: function(query) {
+        var map = {
+          bitcoin:'bitcoin',btc:'bitcoin',ethereum:'ethereum',eth:'ethereum',
+          doge:'dogecoin',dogecoin:'dogecoin',litecoin:'litecoin',ltc:'litecoin',
+          cardano:'cardano',ada:'cardano',solana:'solana',sol:'solana',
+          ripple:'ripple',xrp:'ripple',bnb:'binancecoin',
+          tether:'tether',usdt:'tether'
+        };
+        var cMap = { usd:'usd', dolar:'usd', brl:'brl', real:'brl', eur:'eur', euro:'eur', gbp:'gbp', libra:'gbp', jpy:'jpy' };
+        var q = (query || '').toLowerCase();
+        var coin = 'bitcoin';
+        var curr = 'brl';
+        var tokens = q.split(/[\s,;]+/);
+        for (var i = 0; i < tokens.length; i++) {
+          if (map[tokens[i]]) { coin = map[tokens[i]]; break; }
+        }
+        for (var j = 0; j < tokens.length; j++) {
+          if (cMap[tokens[j]]) { curr = cMap[tokens[j]]; break; }
+        }
+        return 'https://api.coingecko.com/api/v3/simple/price?ids=' + coin + '&vs_currencies=' + curr;
+      },
+      parse: function(data) {
+        try {
+          if (!data || typeof data !== 'object') return 'Sem dados.';
+          var keys = Object.keys(data);
+          if (keys.length === 0) return 'Moeda nao encontrada.';
+          var obj = data[keys[0]];
+          if (!obj || typeof obj !== 'object') return 'Sem dados.';
+          var innerKeys = Object.keys(obj);
+          if (innerKeys.length === 0) return 'Sem cotacao.';
+          var parts = [];
+          for (var i = 0; i < innerKeys.length; i++) {
+            var k = innerKeys[i];
+            var v = obj[k];
+            parts.push('1 ' + keys[0] + ' = ' + v + ' ' + k.toUpperCase());
+          }
+          return parts.join(' | ');
+        } catch (e) {
+          return 'Erro ao processar cotacao.';
+        }
+      }
+    },
+    'qrcode': {
+      favicon: 'qrcode.png',
+      desc: 'gerador de QR code (goqr.me, keyless, retorna PNG; parse usa wrapper {url} - raw mode ainda nao suportado em brain.js)',
+      match: /(qr\s*code|qrcode|gera.*qr|cria.*qr|fazer.*qr)/i,
+      build: function(query) {
+        var q = (query || '').replace(/qr\s*code|qrcode/gi, '').replace(/\b(gera(r)?|cria(r)?|fazer)\b/gi, '').replace(/^(de|do|da|para|com|with)\s+/i, '').trim();
+        var data = q || 'https://github.com/havaianasdestruido/hemorroidabot';
+        return 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(data);
+      },
+      parse: function(data) {
+        try {
+          var url = (data && typeof data === 'object' && data.url) ? data.url : (typeof data === 'string' ? data : null);
+          if (!url) return 'QR code indisponivel.';
+          return '![QR](' + url + ')';
+        } catch (e) {
+          return 'QR code indisponivel.';
+        }
+      }
+    },
+  };
 
   // Intencoes locais por palavra-chave
   function intentLocal(text) {
@@ -639,7 +756,11 @@ const Brain = (function() {
       'agify': 'qual a idade do jose',
       'genderize': 'o nome lucas e masculino ou feminino',
       'universities': 'busca universidades do brasil',
-      'deezer': 'busca deezer queen'
+      'deezer': 'busca deezer queen',
+      'lastfm': 'ultimo scrobble do rj',
+      'wttr': 'tempo agora em sao paulo',
+      'coingecko': 'preco do bitcoin',
+      'qrcode': 'qrcode do google'
     };
     return ex[tool] || tool;
   }
@@ -724,6 +845,20 @@ const Brain = (function() {
         const q = parsed.searchParams.get('q') || '';
         return q ? 'searching Deezer for "' + decodeURIComponent(q) + '"' : 'searching Deezer';
       }
+      case 'lastfm': {
+        const parts = parsed.pathname.split('/');
+        const user = parts[3] || 'rj';
+        return 'checking last scrobble for "' + user + '"';
+      }
+      case 'wttr': {
+        let loc = parsed.host + parsed.pathname + parsed.search;
+        return 'fetching weather at ' + loc;
+      }
+      case 'coingecko': {
+        const ids = parsed.searchParams.get('ids') || 'bitcoin';
+        return 'fetching crypto price for ' + ids;
+      }
+      case 'qrcode': return 'generating QR code';
       default: return 'consulting ' + tool;
     }
   }
