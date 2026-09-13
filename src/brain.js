@@ -122,6 +122,30 @@ const Brain = (function() {
     mexico: 'mexico'
   };
   const EXTERNAL_TOOLS = {
+    'dictionary': {
+      favicon: 'dictionary.png',
+      desc: 'definicao de palavra em ingles (dictionaryapi.dev, keyless)',
+      match: /(dicionario|definicao de|meaning of|significado de|define a palavra|o que significa a palavra)/i,
+      build: function(query, state) {
+        var q = (query || '').replace(/(dicionario|definicao de|meaning of|significado de|define a palavra|o que significa a palavra)/gi, '').replace(/[?.!]/g, '').trim();
+        if (!q) q = 'hello';
+        return 'https://api.dictionaryapi.dev/api/v2/entries/en/' + encodeURIComponent(q);
+      },
+      parse: function(data) {
+        try {
+          if (!Array.isArray(data) || !data.length) return 'Palavra nao encontrada.';
+          var entry = data[0];
+          var word = entry.word || '?';
+          var meaning = entry.meanings && entry.meanings[0];
+          var def = meaning && meaning.definitions && meaning.definitions[0] && meaning.definitions[0].definition;
+          if (!def) return 'Palavra nao encontrada.';
+          var pos = (meaning && meaning.partOfSpeech) || '?';
+          return '"' + word + '" (' + pos + '): ' + def;
+        } catch (e) {
+          return 'Palavra nao encontrada.';
+        }
+      }
+    },
     'wikipedia': {
       favicon: 'wikipedia.png',
       desc: 'resumo Wikipedia',
@@ -403,6 +427,26 @@ const Brain = (function() {
     }
   }
 },
+'trivia': {
+      favicon: 'trivia.png',
+      desc: 'pergunta de trivia / quiz aleatorio (Open Trivia DB, keyless)',
+      match: /(quiz|trivia|pergunta de teste|teste de conhecimento|conhecimento geral)/i,
+      build: function(query, state) {
+        return 'https://opentdb.com/api.php?amount=1&type=multiple';
+      },
+      parse: function(data) {
+        try {
+          if (!data || !data.results || !data.results.length) return 'Sem perguntas agora.';
+          var r = data.results[0];
+          var q = r.question.replace(/&quot;/g, '"').replace(/&#039;/g, "'").replace(/&amp;/g, '&');
+          var a = r.correct_answer.replace(/&quot;/g, '"').replace(/&#039;/g, "'").replace(/&amp;/g, '&');
+          var cat = r.category || 'Geral';
+          return 'Pergunta (' + cat + '):\n' + q + '\nResposta: ' + a;
+        } catch (e) {
+          return 'Sem perguntas agora.';
+        }
+      }
+    },
     'numbersapi': {
       favicon: 'numbersapi.png',
       desc: 'curiosidade sobre um numero (numbersapi)',
@@ -689,6 +733,239 @@ const Brain = (function() {
         }
       }
     },
+    'advice': {
+      favicon: 'advice.png',
+      desc: 'conselhos aleatorios (AdviceSlip, keyless)',
+      match: /(conselho|me aconselhe|advice|me de uma dica|sobrevivencia)/i,
+      build: function() {
+        return 'https://api.adviceslip.com/advice';
+      },
+      parse: function(data) {
+        try {
+          if (!data || !data.slip || !data.slip.advice) return 'Sem conselhos no momento.';
+          return 'Conselho: ' + data.slip.advice;
+        } catch (e) {
+          return 'Sem conselhos no momento.';
+        }
+      }
+    },
+    'kanye': {
+      favicon: 'kanye.png',
+      desc: 'citacao de Kanye West (kanye.rest, keyless)',
+      match: /(kanye|frase do kanye|cita.*kanye|inspira.*kanye)/i,
+      build: function() {
+        return 'https://api.kanye.rest/';
+      },
+      parse: function(data) {
+        try {
+          if (!data || !data.quote) return 'Sem citacao de Kanye agora.';
+          return 'Kanye: "' + data.quote + '"';
+        } catch (e) {
+          return 'Sem citacao de Kanye agora.';
+        }
+      }
+    },
+    'poetry': {
+      favicon: 'poetry.png',
+      desc: 'poema aleatorio do PoetryDB (keyless)',
+      match: /(poema|poesia|poeta|verso|versos|uma poema)/i,
+      build: function() {
+        return 'https://poetrydb.org/random';
+      },
+      parse: function(data) {
+        try {
+          if (!data || !Array.isArray(data) || !data.length) return 'Nenhum poema encontrado.';
+          var poem = data[0];
+          var title = poem.title || 'Sem titulo';
+          var author = poem.author || 'Desconhecido';
+          var lines = Array.isArray(poem.lines) ? poem.lines.slice(0, 4) : [];
+          return title + '\n— ' + author + '\n\n' + lines.join('\n');
+        } catch (e) {
+          return 'Nenhum poema encontrado.';
+        }
+      }
+    },
+    'datamuse': {
+      favicon: 'datamuse.png',
+      desc: 'sinonimos, rimas e palavras parecidas (datamuse, keyless)',
+      match: /(sinonimo de|sinonimos de|rima com|rhyme with|palavras parecidas)/i,
+      build: function(query, state) {
+        var q = (query || '').replace(/(sinonimo de|sinonimos de|rima com|rhyme with|palavras parecidas)/gi, '').replace(/[?.!]/g, '').trim();
+        if (q) return 'https://api.datamuse.com/words?rel_syn=' + encodeURIComponent(q);
+        return 'https://api.datamuse.com/words?rel_syn=' + encodeURIComponent('happy');
+      },
+      parse: function(data, word) {
+        try {
+          if (!data || !Array.isArray(data) || !data.length) return 'Nenhuma palavra encontrada.';
+          var target = (word || '').trim() || 'the query';
+          var words = data.slice(0, 5).map(function(item) { return item.word; });
+          return 'Sinonimos de ' + target + ': ' + words.join(', ');
+        } catch (e) {
+          return 'Nenhuma palavra encontrada.';
+        }
+      }
+    },
+    'anime': {
+      favicon: 'anime.png',
+      desc: 'busca de anime/manga no Jikan (MyAnimeList, keyless)',
+      match: /(anime|manga|personagem anime)/i,
+      build: function(query, state) {
+        var q = (query || '').replace(/(anime|manga|personagem)/gi, '').replace(/[?.!]/g, '').trim();
+        if (!q) q = 'one piece';
+        return 'https://api.jikan.moe/v4/anime?q=' + encodeURIComponent(q) + '&limit=3&sfw=true';
+      },
+      parse: function(data) {
+        try {
+          if (!data || !data.data || !data.data[0]) return 'Anime nao encontrado.';
+          var a = data.data[0];
+          var title = a.title || 'Desconhecido';
+          var score = a.score != null ? a.score : '?';
+          var episodes = a.episodes != null ? a.episodes : '?';
+          var status = a.status || 'desconhecido';
+          var synopsis = a.synopsis || '';
+          if (synopsis.length > 120) synopsis = synopsis.slice(0, 120) + '...';
+          return 'Titulo: ' + title + '\nNota: ' + score + '/10\nEpisodios: ' + episodes + '\nStatus: ' + status + '\nSinopse: ' + synopsis;
+        } catch (e) {
+          return 'Anime nao encontrado.';
+        }
+      }
+    },
+    'starwars': {
+      favicon: 'starwars.png',
+      desc: 'personagem de Star Wars (SWAPI, keyless)',
+      match: /(star wars|jedi|sith|luke skywalker|darth vader|yoda|personagem de star wars)/i,
+      build: function(query) {
+        try {
+          var m = (query || '').match(/(star wars|jedi|sith|luke skywalker|darth vader|yoda|personagem de star wars)/i);
+          var rest = (query || '').replace(m ? m[1] : '', '').replace(/[?.!,]/g, '').trim();
+          return 'https://swapi.dev/api/people/?search=' + encodeURIComponent(rest || 'luke');
+        } catch (e) {
+          return 'https://swapi.dev/api/people/?search=luke';
+        }
+      },
+      parse: function(data) {
+        try {
+          if (!data || !data.results || !data.results.length) return 'Personagem nao encontrado.';
+          var p = data.results[0];
+          return 'Personagem: ' + p.name + '\nAltura: ' + p.height + ' cm\nMassa: ' + p.mass + ' kg\nGenero: ' + p.gender + '\nAno de nascimento: ' + p.birth_year;
+        } catch (e) {
+          return 'Personagem nao encontrado.';
+        }
+      }
+    },
+'rickandmorty': {
+      favicon: 'rickandmorty.png',
+      desc: 'busca personagem de Rick and Morty (rickandmortyapi.com, keyless)',
+      match: /(rick and morty|rick e morty|personagem do rick|morty)/i,
+      build: function(query, state) {
+        var q = (query || '').replace(/(rick and morty|rick e morty|personagem do rick|morty|personagem|do |de |da | and | e )/gi, '').replace(/[?.!,;:]/g, '').replace(/\s+/g, ' ').trim();
+        if (!q) q = 'rick';
+        return 'https://rickandmortyapi.com/api/character/?name=' + encodeURIComponent(q);
+      },
+      parse: function(data) {
+        try {
+          if (!data || !data.results || !data.results.length) return 'Personagem nao encontrado.';
+          var r = data.results[0];
+          var origin = (r.origin && r.origin.name) || 'desconhecida';
+          return 'Nome: ' + r.name + '\nStatus: ' + r.status + '\nEspecie: ' + r.species + '\nGenero: ' + r.gender + '\nOrigem: ' + origin + '\nImagem: ' + r.image;
+        } catch (e) {
+          return 'Personagem nao encontrado.';
+        }
+      }
+    },
+    'recipe': {
+      favicon: 'recipe.png',
+      desc: 'receitas aleatorias ou por nome (TheMealDB, keyless)',
+      match: /(receita|receita de|cozinh|culinaria|recipe)/i,
+      build: function(query, state) {
+        try {
+          var q = (query || '').replace(/(receita de|receita)/gi, '').replace(/[?.!]/g, '').trim();
+          if (q) return 'https://www.themealdb.com/api/json/v1/1/search.php?s=' + encodeURIComponent(q);
+          return 'https://www.themealdb.com/api/json/v1/1/random.php';
+        } catch (e) {
+          return 'https://www.themealdb.com/api/json/v1/1/random.php';
+        }
+      },
+      parse: function(data) {
+        try {
+          if (!data || !data.meals || !data.meals.length) return 'Receita nao encontrada.';
+          var m = data.meals[0];
+          var name = m.strMeal || 'sem nome';
+          var cat = m.strCategory || 'desconhecida';
+          var thumb = m.strMealThumb || '';
+          var instr = (m.strInstructions || '').replace(/\s+/g, ' ').trim();
+          var res = name + ' (' + cat + ')\n';
+          if (thumb) res += thumb + '\n';
+          if (instr) res += instr.slice(0, 120) + (instr.length > 120 ? '...' : '');
+          return res;
+        } catch (e) {
+          return 'Receita nao encontrada.';
+        }
+      }
+    },
+    'github': {
+      favicon: 'github.png',
+      desc: 'perfil publico do github (keyless)',
+      match: /(github|perfil no github|usuario do github|github do)/i,
+      build: function(query) {
+        var q = (query || '').replace(/(github|perfil no github|usuario do github|github do|perfil de|usuario de|do |de )/gi, '').replace(/[?.!]/g, '').trim();
+        return 'https://api.github.com/users/' + encodeURIComponent(q || 'torvalds');
+      },
+      parse: function(data) {
+        try {
+          if (!data || !data.login) return 'Usuario nao encontrado.';
+          return (data.name || data.login) + ' — ' + (data.bio || 'sem bio') + '\nRepos publicos: ' + (data.public_repos != null ? data.public_repos : '?') + '\nSeguidores: ' + (data.followers != null ? data.followers : '?') + '\nLink: ' + (data.html_url || '');
+        } catch (e) {
+          return 'Usuario nao encontrado.';
+        }
+      }
+    },
+    'randomuser': {
+      favicon: 'randomuser.png',
+      desc: 'pessoa aleatoria (RandomUser, keyless)',
+      match: /(pessoa aleatoria|random user|usuario aleatorio|gera uma pessoa|pessoa ficticia)/i,
+      build: function(query, state) {
+        return 'https://randomuser.me/api/?nat=br';
+      },
+      parse: function(data) {
+        try {
+          if (!data || !data.results || !data.results.length) return 'Pessoa nao encontrada.';
+          var p = data.results[0];
+          var name = (p.name && p.name.first) + ' ' + (p.name && p.name.last);
+          var email = p.email || '?';
+          var phone = p.phone || '?';
+          var loc = '';
+          if (p.location && p.location.city) {
+            loc = p.location.city + (p.location.country ? ', ' + p.location.country : '');
+          }
+          var thumb = (p.picture && p.picture.thumbnail) || '';
+          var line = 'Nome: ' + name + '\nEmail: ' + email + '\nTelefone: ' + phone;
+          if (loc) line += '\nLocalizacao: ' + loc;
+          if (thumb) line += '\nFoto: ' + thumb;
+          return line;
+        } catch (e) {
+          return 'Pessoa nao encontrada.';
+        }
+      }
+    },
+    'news': {
+      favicon: 'news.png',
+      desc: 'ultimas noticias tech do Hacker News (keyless)',
+      match: /(hacker news|noticias.*tech|top stories|topstories|news ycombinator|hn algo)/i,
+      build: function() {
+        return 'https://hacker-news.firebaseio.com/v0/topstories.json';
+      },
+      parse: function(data) {
+        try {
+          if (!Array.isArray(data) || data.length === 0) return 'Sem noticias agora.';
+          return data.slice(0, 5).map(function(id) {
+            return 'https://news.ycombinator.com/item?id=' + id;
+          }).join('\n');
+        } catch (e) {
+          return 'Sem noticias agora.';
+        }
+      }
+    },
   };
 
   // Intencoes locais por palavra-chave
@@ -760,7 +1037,20 @@ const Brain = (function() {
       'lastfm': 'ultimo scrobble do rj',
       'wttr': 'tempo agora em sao paulo',
       'coingecko': 'preco do bitcoin',
-      'qrcode': 'qrcode do google'
+      'qrcode': 'qrcode do google',
+      'dictionary': 'definicao de serendipity',
+      'advice': 'me da um conselho',
+      'trivia': 'quiz para mim',
+      'kanye': 'kanye para mim',
+      'poetry': 'poema',
+      'datamuse': 'sinonimo de happy',
+      'anime': 'anime naruto',
+      'starwars': 'star wars luke',
+      'rickandmorty': 'personagem do rick and morty rick',
+      'recipe': 'receita de pizza',
+      'github': 'github do torvalds',
+      'randomuser': 'me da uma pessoa aleatoria',
+      'news': 'noticias tech para mim'
     };
     return ex[tool] || tool;
   }
@@ -859,6 +1149,42 @@ const Brain = (function() {
         return 'fetching crypto price for ' + ids;
       }
       case 'qrcode': return 'generating QR code';
+      case 'dictionary': {
+        const parts = parsed.pathname.split('/');
+        const word = decodeURIComponent(parts[parts.length - 1] || '');
+        return word ? 'looking up "' + word + '"' : 'consulting dictionary';
+      }
+      case 'advice': return 'fetching a random advice';
+      case 'trivia': return 'fetching a trivia question';
+      case 'kanye': return 'fetching a Kanye quote';
+      case 'poetry': return 'fetching a random poem';
+      case 'datamuse': {
+        const q = parsed.searchParams.get('rel_syn') || '';
+        return q ? 'finding synonyms for "' + q + '"' : 'searching words';
+      }
+      case 'anime': {
+        const q = parsed.searchParams.get('q') || '';
+        return q ? 'searching anime "' + decodeURIComponent(q) + '"' : 'searching anime';
+      }
+      case 'starwars': {
+        const q = parsed.searchParams.get('search') || '';
+        return q ? 'searching Star Wars characters for "' + q + '"' : 'searching Star Wars';
+      }
+      case 'rickandmorty': {
+        const q = parsed.searchParams.get('name') || '';
+        return q ? 'searching Rick and Morty for "' + q + '"' : 'searching Rick and Morty';
+      }
+      case 'recipe': {
+        if (parsed.searchParams.get('s')) return 'searching a recipe';
+        return 'fetching a random recipe';
+      }
+      case 'github': {
+        const parts = parsed.pathname.split('/');
+        const user = parts[parts.length - 1] || '';
+        return user ? 'checking GitHub profile "' + user + '"' : 'checking GitHub';
+      }
+      case 'randomuser': return 'generating a random person';
+      case 'news': return 'fetching top tech news';
       default: return 'consulting ' + tool;
     }
   }

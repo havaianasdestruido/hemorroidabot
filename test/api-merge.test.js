@@ -82,6 +82,91 @@ const APIS = {
     phrase: 'busca deezer queen bohemian',
     mock: { data: [{ title: 'Bohemian Rhapsody', artist: { name: 'Queen' }, album: { title: 'A Night at the Opera' }, duration: 354, preview: 'https://x.mp3' }] },
     expect: ['Queen', 'Bohemian Rhapsody']
+  },
+  'lastfm': {
+    phrase: 'ultimo scrobble do rj',
+    mock: { payload: { listens: [{ played_at: 1000000000, track_metadata: { track_name: 'Everlong', artist_name: 'Foo Fighters', release_name: 'The Colour and the Shape' } }] } },
+    expect: ['Everlong', 'Foo Fighters']
+  },
+  'wttr': {
+    phrase: 'wttr sao paulo',
+    mock: { current_condition: [{ temp_C: '25', FeelsLikeC: '27', humidity: '60', windspeedKmph: '10', weatherDesc: [{ value: 'Ensolarado' }] }], nearest_area: [{ areaName: [{ value: 'Sao Paulo' }], country: [{ value: 'Brazil' }] }] },
+    expect: ['Clima em', 'Sao Paulo', 'Atual']
+  },
+  'coingecko': {
+    phrase: 'preco do bitcoin',
+    mock: { bitcoin: { brl: 250000 } },
+    expect: ['1 bitcoin = 250000 BRL']
+  },
+  'qrcode': {
+    phrase: 'qrcode do google',
+    mock: 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=google',
+    expect: ['![QR]']
+  },
+  'dictionary': {
+    phrase: 'definicao de serendipity',
+    mock: [{ word: 'serendipity', meanings: [{ partOfSpeech: 'noun', definitions: [{ definition: 'the occurrence of events by chance' }] }] }],
+    expect: ['serendipity', 'noun']
+  },
+  'advice': {
+    phrase: 'me da um conselho',
+    mock: { slip: { id: 1, advice: 'Sleep well.' } },
+    expect: ['Conselho:', 'Sleep well.']
+  },
+  'trivia': {
+    phrase: 'quiz para mim',
+    mock: { response_code: 0, results: [{ category: 'Science', question: 'What gas do plants absorb?', correct_answer: 'CO2', incorrect_answers: ['O2'] }] },
+    expect: ['Pergunta (Science)', 'Resposta: CO2']
+  },
+  'kanye': {
+    phrase: 'kanye para mim',
+    mock: { quote: 'I am the best.' },
+    expect: ['Kanye:', 'I am the best.']
+  },
+  'poetry': {
+    phrase: 'poema',
+    mock: [{ title: 'No Man Is An Island', author: 'John Donne', lines: ['No man is an island', 'entire of itself.'] }],
+    expect: ['No Man Is An Island', 'John Donne']
+  },
+  'datamuse': {
+    phrase: 'sinonimo de feliz',
+    mock: [{ word: 'happy' }, { word: 'glad' }, { word: 'cheerful' }],
+    expect: ['Sinonimos', 'happy, glad, cheerful']
+  },
+  'anime': {
+    phrase: 'anime naruto',
+    mock: { data: [{ title: 'Naruto', score: 8.5, episodes: 220, status: 'Finished', synopsis: 'A young ninja seeks recognition.' }] },
+    expect: ['Titulo: Naruto', '8.5/10']
+  },
+  'starwars': {
+    phrase: 'star wars luke',
+    mock: { results: [{ name: 'Luke Skywalker', height: '172', mass: '77', gender: 'male', birth_year: '19BBY' }] },
+    expect: ['Luke Skywalker', '172']
+  },
+  'rickandmorty': {
+    phrase: 'personagem do rick and morty rick',
+    mock: { results: [{ name: 'Rick Sanchez', status: 'Alive', species: 'Human', gender: 'Male', origin: { name: 'Earth (C-137)' }, image: 'https://x/img.png' }] },
+    expect: ['Rick Sanchez', 'Alive']
+  },
+  'recipe': {
+    phrase: 'receita de pizza',
+    mock: { meals: [{ strMeal: 'Pizza', strCategory: 'Italian', strMealThumb: 'https://x/p.png', strInstructions: 'Make dough. Add toppings. Bake.' }] },
+    expect: ['Pizza', 'Italian']
+  },
+  'github': {
+    phrase: 'github do torvalds',
+    mock: { login: 'torvalds', name: 'Linus Torvalds', bio: 'creator of linux', public_repos: 7, followers: 200000, html_url: 'https://github.com/torvalds' },
+    expect: ['Linus Torvalds', 'creator of linux']
+  },
+  'randomuser': {
+    phrase: 'me da uma pessoa aleatoria',
+    mock: { results: [{ name: { first: 'Joao', last: 'Silva' }, email: 'joao@x.com', phone: '1234', location: { city: 'Sao Paulo', country: 'Brazil' }, picture: { thumbnail: 'https://x/t.png' } }] },
+    expect: ['Joao', 'joao@x.com']
+  },
+  'news': {
+    phrase: 'noticias tech para mim',
+    mock: [857223, 1, 2, 3, 4, 5],
+    expect: ['news.ycombinator.com']
   }
 };
 
