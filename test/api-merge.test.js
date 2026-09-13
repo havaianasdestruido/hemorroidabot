@@ -167,6 +167,81 @@ const APIS = {
     phrase: 'noticias tech para mim',
     mock: [857223, 1, 2, 3, 4, 5],
     expect: ['news.ycombinator.com']
+  },
+  'httppets': {
+    phrase: 'qual o status dog 404',
+    mock: { status_code: 404, title: 'Not Found', image: 'https://http.dog/404.jpg' },
+    expect: ['HTTP 404', 'Not Found']
+  },
+  'animefacts': {
+    phrase: 'fato sobre anime',
+    mock: { data: [{ anime_name: 'Naruto', fact: 'Naruto loves ramen.' }] },
+    expect: ['Naruto', 'Fato: Naruto loves ramen.']
+  },
+  'quran': {
+    phrase: 'versiculo do corao',
+    mock: { data: { editions: [{ edition: { language: 'pt', identifier: 'pt-br' }, surah: { number: 1 }, numberInSurah: 5, text: 'Contigo buscamos ajuda.' }] } },
+    expect: ['Surah 1:5', 'Contigo buscamos ajuda.']
+  },
+  'bible': {
+    phrase: 'versiculo da biblia',
+    mock: { random_verse: { text: 'O Senhor e o meu pastor.', reference: 'Salmos 23:1', translation_name: 'WEB' } },
+    expect: ['Salmos 23:1', 'O Senhor e o meu pastor.']
+  },
+  'fishwatch': {
+    phrase: 'me da info sobre peixe',
+    mock: [{ name: 'Tuna', scientific_name: 'Thunnus', harvest_type: 'Wild', habitat: 'Ocean waters of the Atlantic', image_gallery: [{ src: 'https://img.png' }] }],
+    expect: ['Nome: Tuna', 'Thunnus', 'https://img.png']
+  },
+  'dogfacts': {
+    phrase: 'me da um fato canino',
+    mock: { facts: ['Dogs dream like humans.', 'A dog nose has 300 million receptors.'] },
+    expect: ['Fatos sobre caes', 'Dogs dream']
+  },
+  'jsonplaceholder': {
+    phrase: 'me mostra um post do json placeholder',
+    mock: { id: 5, title: 'Test post', body: 'This is a body.' },
+    expect: ['Post 5', 'Test post']
+  },
+  'countapi': {
+    phrase: 'quantas visitas meu site tem',
+    mock: { value: 12345 },
+    expect: ['Total de visitas: 12345']
+  },
+  'fox': {
+    phrase: 'me mostra uma raposa',
+    mock: { image: 'https://randomfox.ca/images/1.jpg' },
+    expect: ['Raposa:', 'https://randomfox.ca']
+  },
+  'emoji': {
+    phrase: 'manda um emoji',
+    mock: { name: 'grinning face', category: 'smileys', htmlCode: ['&#128512;'] },
+    expect: ['&#128512;', 'grinning face']
+  },
+  'fruityvice': {
+    phrase: 'info sobre fruta banana',
+    mock: { name: 'Banana', family: 'Musaceae', nutritions: { calories: 89, sugar: 12.2, carbohydrates: 22.8, protein: 1.1, fat: 0.3 } },
+    expect: ['Banana (Musaceae)', 'Calorias: 89']
+  },
+  'deckofcards': {
+    phrase: 'sorteia uma carta',
+    mock: { cards: [{ value: 'ACE', suit: 'SPADES', image: 'https://deckofcardsapi.com/static/img/A.png' }], remaining: 51 },
+    expect: ['Carta: ACE', 'Restantes: 51']
+  },
+  'tronalddump': {
+    phrase: 'frase do trump',
+    mock: { value: 'Nobody knows the system better than me.' },
+    expect: ['Tronald Dump:', 'Nobody knows']
+  },
+  'urban': {
+    phrase: 'o que quer dizer na giria glow up',
+    mock: { list: [{ word: 'glow up', definition: 'A transformation for the better.', example: 'She had a huge glow up.' }] },
+    expect: ['Giria: glow up', 'A transformation']
+  },
+  'shibe': {
+    phrase: 'me mostra um shiba',
+    mock: ['https://shibe.online/api/shibes/a.jpg'],
+    expect: ['Shiba:', 'shibe.online']
   }
 };
 

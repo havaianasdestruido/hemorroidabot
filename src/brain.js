@@ -223,6 +223,34 @@ const Brain = (function() {
         return data.name + '@' + latest + '\n' + (data.description || '') + '\n' + (data.homepage || '');
       }
     },
+    'httppets': {
+      favicon: 'httppets.png',
+      desc: 'foto de cachorro/gatinho para codigo de status HTTP (http.dog, keyless, JSON)',
+      match: /(http dog|status code do http|http cat|status code do|status code de|qual o status|status dog|status cat|foto do status|ctrl alt del status)/i,
+      build: function(query) {
+        var q = query || '';
+        if (/\/infty\b/i.test(q)) return 'https://http.dog/599.json';
+        if (/\/(?:dunder|mifflin)\b/i.test(q)) return 'https://http.dog/200.json';
+        var m = q.match(/\b([1-5]\d{2})\b/);
+        var code = m ? m[1] : 200;
+        return 'https://http.dog/' + code + '.json';
+      },
+      parse: function(data) {
+        try {
+          var out = '';
+          var code = (data && data.status_code != null) ? data.status_code : null;
+          var title = (data && data.title) ? data.title : '';
+          var image = (data && data.image) ? data.image : '';
+          if (code != null) out += 'HTTP ' + code;
+          if (title) out += (out ? ' – ' : '') + title;
+          if (image) out += (out ? '\nFoto: ' : 'Foto: ') + image;
+          if (out) return out;
+          return 'Status HTTP indisponivel no momento.';
+        } catch (e) {
+          return 'Status HTTP indisponivel no momento.';
+        }
+      }
+    },
     'dog-ceo': {
       favicon: 'dog-ceo.png',
       desc: 'imagem/foto aleatoria de cachorro (dog.ceo)',
@@ -805,6 +833,36 @@ const Brain = (function() {
         }
       }
     },
+    'animefacts': {
+      favicon: 'animefacts.png',
+      desc: 'fato/curiosidade sobre anime (AnimeFacts, keyless)',
+      match: /(fato sobre anime|fatos sobre anime|curiosidade do anime|animefacts|fato do anime)/i,
+      build: function(query, state) {
+        var q = (query || '').replace(/(fato sobre anime|fatos sobre anime|curiosidade do anime|animefacts|fato do anime)/gi, '').replace(/[?.!,;:]/g, '').trim();
+        if (state && q) state.anime_name = q;
+        return 'https://chandan-02.github.io/anime-facts-rest-api/fact.json';
+      },
+      parse: function(data, state) {
+        try {
+          var list = (data && Array.isArray(data.data)) ? data.data : [];
+          if (!list.length) return 'Sem fatos sobre anime agora.';
+          var word = '';
+          if (typeof state === 'string') word = state;
+          else if (state && typeof state === 'object') word = state.anime_name || (state.animefacts && state.animefacts.name) || '';
+          if (word) {
+            var w = String(word).toLowerCase();
+            list = list.filter(function(f) {
+              return f && f.anime_name && String(f.anime_name).toLowerCase().indexOf(w) !== -1;
+            });
+            if (!list.length) return 'Sem fatos sobre anime agora.';
+          }
+          var f = list[Math.floor(Math.random() * list.length)];
+          return '"' + (f.anime_name || 'Desconhecido') + '"\nFato: ' + (f.fact || '');
+        } catch (e) {
+          return 'Sem fatos sobre anime agora.';
+        }
+      }
+    },
     'anime': {
       favicon: 'anime.png',
       desc: 'busca de anime/manga no Jikan (MyAnimeList, keyless)',
@@ -966,6 +1024,281 @@ const Brain = (function() {
         }
       }
     },
+    'quran': {
+      favicon: 'quran.png',
+      desc: 'versiculo aleatorio do Corao em arabe e portugues (AlQuran Cloud, keyless)',
+      match: /(alcorao|alcorao|corao|surata|versiculo do corao)/i,
+      build: function(query, state) {
+        return 'https://api.alquran.cloud/v1/ayah/random/editions/quran-uthmani,pt-br';
+      },
+      parse: function(data) {
+        try {
+          if (!data || !data.data || !data.data.editions || !data.data.editions.length) return 'Sem versiculo do Corao agora.';
+          var editions = data.data.editions;
+          var ed = editions.filter(function(e) { return e.edition && e.edition.language === 'pt'; })[0];
+          if (!ed) ed = editions[0];
+          var surah = (ed.surah && ed.surah.number) || '?';
+          var ayah = ed.numberInSurah != null ? ed.numberInSurah : '?';
+          var id = (ed.edition && ed.edition.identifier) || 'desconhecido';
+          return 'Surah ' + surah + ':' + ayah + ' (' + id + ')\n' + (ed.text || '');
+        } catch (e) {
+          return 'Sem versiculo do Corao agora.';
+        }
+      }
+    },
+    'bible': {
+      favicon: 'bible.png',
+      desc: 'versiculo aleatorio da biblia (Bible API, keyless)',
+      match: /(versiculo|versiculo da biblia|biblia|salmo|palavra de deus)/i,
+      build: function(query) {
+        try {
+          return 'https://bible-api.com/data/web/random';
+        } catch (e) {
+          return 'https://bible-api.com/data/web/random';
+        }
+      },
+      parse: function(data) {
+        try {
+          if (!data || !data.random_verse) return 'Sem versiculo agora.';
+          var v = data.random_verse;
+          var text = (v.text || '').trim();
+          var ref = (v.reference || '').trim();
+          var trans = (v.translation_name || '');
+          if (!text) return 'Sem versiculo agora.';
+          return text + '\n— ' + ref + ' (' + trans + ')';
+        } catch (e) {
+          return 'Sem versiculo agora.';
+        }
+      }
+    },
+    'fishwatch': {
+      favicon: 'fishwatch.png',
+      desc: 'informacao sobre especies marinhas (FishWatch, keyless)',
+      match: /(peixe|fish|especie marinha|frutos do mar|info.*peixe)/i,
+      build: function(query, state) {
+        return 'https://www.fishwatch.gov/api/species';
+      },
+      parse: function(data) {
+        try {
+          if (!Array.isArray(data) || data.length === 0) return 'Peixe nao encontrado.';
+          var s = data[Math.floor(Math.random() * data.length)];
+          var name = (s && s.name) || 'Desconhecido';
+          var sci = (s && s.scientific_name) || 'Desconhecido';
+          var reg = (s && s.harvest_type) || 'Desconhecido';
+          var hab = (s && s.habitat) || 'Desconhecido';
+          if (hab.length > 80) hab = hab.slice(0, 80);
+          var img = 'Indisponivel';
+          if (s && Array.isArray(s.image_gallery) && s.image_gallery.length && s.image_gallery[0] && s.image_gallery[0].src) {
+            img = s.image_gallery[0].src;
+          }
+          return 'Nome: ' + name + '\nNome cientifico: ' + sci + '\nRegiao: ' + reg + '\nHabitat: ' + hab + '\nImagem: ' + img;
+        } catch (e) {
+          return 'Erro ao processar especie.';
+        }
+      }
+    },
+    'dogfacts': {
+      favicon: 'dogfacts.png',
+      desc: 'fatos caninos curiosos (dog-api.kinduff.com, keyless)',
+      match: /(fato canino|fatos caninos|curiosidade canina|fact canino|cachorrinho trivia)/i,
+      build: function(query) {
+        return 'https://dog-api.kinduff.com/api/facts?number=2';
+      },
+      parse: function(data) {
+        try {
+          if (!data || !data.facts || !data.facts.length) return 'Sem fatos agora.';
+          var list = data.facts.slice(0, 2).map(function(f) { return '- ' + String(f); });
+          return 'Fatos sobre caes:\n' + list.join('\n');
+        } catch (e) {
+          return 'Sem fatos agora.';
+        }
+      }
+    },
+    'jsonplaceholder': {
+      favicon: 'jsonplaceholder.png',
+      desc: 'endpoint de teste mock-rest (JSONPlaceholder, keyless)',
+      match: /(json placeholder|placeholder json|mock rest|dados fake|endpoint de teste|teste de api rest)/i,
+      build: function(query, state) {
+        try {
+          var q = (query || '').trim();
+          var m = q.match(/(\d+)/);
+          var n = m ? m[1] : 1;
+          return 'https://jsonplaceholder.typicode.com/posts/' + encodeURIComponent(n);
+        } catch (e) {
+          return 'https://jsonplaceholder.typicode.com/posts/1';
+        }
+      },
+      parse: function(data) {
+        try {
+          if (!data || !data.id) return 'Post nao encontrado.';
+          return 'Post ' + data.id + ':\n' + data.title + '\n\n' + data.body;
+        } catch (e) {
+          return 'Post nao encontrado.';
+        }
+      }
+    },
+    'countapi': {
+      favicon: 'countapi.png',
+      desc: 'contador de visitas (CountAPI, keyless)',
+      match: /(contador de visitas|quantas visitas|contagem de visitas|hit counter|quantos acessos)/i,
+      build: function() {
+        return 'https://api.countapi.xyz/hit/hemorroidabot/visitas';
+      },
+      parse: function(data) {
+        try {
+          if (!data || data.value == null) return 'Contador indisponivel.';
+          return 'Total de visitas: ' + data.value;
+        } catch (e) {
+          return 'Contador indisponivel.';
+        }
+      }
+    },
+    'fox': {
+      favicon: 'fox.png',
+      desc: 'foto aleatoria de raposa (randomfox.ca, keyless)',
+      match: /(raposa|fox|foto de raposa|imagem.*raposa)/i,
+      build: function(query, state) {
+        return 'https://randomfox.ca/floof/';
+      },
+      parse: function(data) {
+        try {
+          if (!data || !data.image) return 'Raposa nao encontrada.';
+          return 'Raposa:\n' + data.image;
+        } catch (e) {
+          return 'Raposa nao encontrada.';
+        }
+      }
+    },
+    'emoji': {
+      favicon: 'emoji.png',
+      desc: 'emoji aleatorio (EmojiHub, keyless)',
+      match: /(emoji aleatorio|manda um emoji|um emoji|emoji para)/i,
+      build: function(query) {
+        return 'https://emojihub.yurace.pro/api/random';
+      },
+      parse: function(data) {
+        try {
+          if (!data || !data.name || !data.htmlCode || !data.htmlCode.length) return 'Emoji nao encontrado.';
+          var code = data.htmlCode.join('');
+          var cat = data.category || 'desconhecida';
+          return code + '\n' + data.name + ' (' + cat + ')';
+        } catch (e) {
+          return 'Emoji nao encontrado.';
+        }
+      }
+    },
+    'fruityvice': {
+      favicon: 'fruityvice.png',
+      desc: 'informacoes nutricionais de frutas (Fruityvice, keyless)',
+      match: /(fruta|fruit|info.*fruta|valor nutricional|calorias da)/i,
+      build: function(query, state) {
+        var q = (query || '').replace(/(fruta|fruit|info.*fruta|valor nutricional|calorias da|da fruta|de fruta)/gi, '').replace(/[?.!,:]/g, '').trim();
+        if (!q) q = 'banana';
+        return 'https://www.fruityvice.com/api/fruit/' + encodeURIComponent(q);
+      },
+      parse: function(data) {
+        try {
+          if (!data || !data.name) return 'Fruta nao encontrada.';
+          var fam = data.family || '?';
+          var n = data.nutritions || {};
+          var num = function(v) { return v != null ? v : '?'; };
+          return data.name + ' (' + fam + ')\nCalorias: ' + num(n.calories) + ' kcal\nAcucar: ' + num(n.sugar) + ' g\nCarboidratos: ' + num(n.carbohydrates) + ' g\nProteina: ' + num(n.protein) + ' g\nGordura: ' + num(n.fat) + ' g';
+        } catch (e) {
+          return 'Fruta nao encontrada.';
+        }
+      }
+    },
+    'deckofcards': {
+      favicon: 'deckofcards.png',
+      desc: 'compra/sorteia cartas de um baralho (deckofcardsapi, keyless)',
+      match: /(baralho|cartas?|comprar carta|jogo de cartas|sorteia uma carta|tira uma carta)/i,
+      build: function(query) {
+        var n = 1;
+        var q = query || '';
+        var m = q.match(/(\d+)/);
+        if (m) {
+          var c = parseInt(m[1], 10);
+          if (c >= 1 && c <= 5) n = c;
+        }
+        return 'https://deckofcardsapi.com/api/deck/new/draw/?count=' + n;
+      },
+      parse: function(data) {
+        try {
+          if (!data || !Array.isArray(data.cards) || !data.cards.length) return 'Carta nao encontrada.';
+          var card = data.cards[0];
+          var value = card.value || '?';
+          var suit = card.suit || '?';
+          var image = card.image || '?';
+          var remaining = data.remaining != null ? data.remaining : '?';
+          return 'Carta: ' + value + ' de ' + suit + '\nImagem: ' + image + '\nRestantes: ' + remaining;
+        } catch (e) {
+          return 'Carta nao encontrada.';
+        }
+      }
+    },
+    'tronalddump': {
+      favicon: 'tronalddump.png',
+      desc: 'citacao do donald trump (tronalddump.io, keyless)',
+      match: /(tronald dump|tronald|trump|donald trump|fato do trump|frase do trump)/i,
+      build: function(query) {
+        return 'https://api.tronalddump.io/random/quote';
+      },
+      parse: function(data) {
+        try {
+          var value = (data && data.value && String(data.value)) || '';
+          return value ? 'Tronald Dump: "' + value + '"' : 'Sem citacao do trump agora.';
+        } catch (e) {
+          return 'Sem citacao do trump agora.';
+        }
+      }
+    },
+    'urban': {
+      favicon: 'urban.png',
+      desc: 'significado de giria (Urban Dictionary, keyless)',
+      match: /(giria|giria de|urban dictionary|slang|o que quer dizer na giria|termo da internet)/i,
+      build: function(query) {
+        try {
+          var q = (query || '').replace(/(giria de|giria|urban dictionary de|urban dictionary|slang de|slang|o que quer dizer na giria|termo da internet)/gi, '').replace(/[?.!]/g, '').trim();
+          if (!q) q = 'lol';
+          return 'https://api.urbandictionary.com/v0/define?term=' + encodeURIComponent(q);
+        } catch (e) {
+          return 'https://api.urbandictionary.com/v0/define?term=lol';
+        }
+      },
+      parse: function(data) {
+        try {
+          if (!data || !data.list || !data.list.length) return 'Giria nao encontrada.';
+          var item = data.list[0];
+          var word = item.word != null ? item.word : '?';
+          var def = (item.definition || '').replace(/\s+/g, ' ').trim();
+          if (!def) return 'Giria nao encontrada.';
+          if (def.length > 140) def = def.slice(0, 140) + '...';
+          var ex = (item.example || '').replace(/\s+/g, ' ').trim();
+          if (ex.length > 80) ex = ex.slice(0, 80) + '...';
+          var out = 'Giria: ' + word + '\n' + def;
+          if (ex) out += '\nexemplo: ' + ex;
+          return out;
+        } catch (e) {
+          return 'Giria nao encontrada.';
+        }
+      }
+    },
+    'shibe': {
+      favicon: 'shibe.png',
+      desc: 'foto de shiba inu (shibe.online, keyless)',
+      match: /(shiba|shibe)/i,
+      build: function() {
+        return 'https://shibe.online/api/shibes?count=1&urls=true';
+      },
+      parse: function(data) {
+        try {
+          if (!data || !Array.isArray(data) || !data.length) return 'Shiba nao encontrado.';
+          return 'Shiba:\n' + data[0];
+        } catch (e) {
+          return 'Shiba nao encontrado.';
+        }
+      }
+    },
   };
 
   // Intencoes locais por palavra-chave
@@ -1050,7 +1383,22 @@ const Brain = (function() {
       'recipe': 'receita de pizza',
       'github': 'github do torvalds',
       'randomuser': 'me da uma pessoa aleatoria',
-      'news': 'noticias tech para mim'
+      'news': 'noticias tech para mim',
+      'httppets': 'qual o status dog 404',
+      'animefacts': 'fato sobre anime',
+      'quran': 'versiculo do corao para mim',
+      'bible': 'versiculo da biblia para mim',
+      'fishwatch': 'me da info sobre peixe',
+      'dogfacts': 'me da um fato canino',
+      'jsonplaceholder': 'me mostra um post do json placeholder',
+      'countapi': 'quantas visitas meu site tem',
+      'fox': 'me mostra uma raposa',
+      'emoji': 'manda um emoji',
+      'fruityvice': 'info sobre fruta banana',
+      'deckofcards': 'sorteia uma carta',
+      'tronalddump': 'frase do trump',
+      'urban': 'o que quer dizer na giria glow up',
+      'shibe': 'me mostra um shiba'
     };
     return ex[tool] || tool;
   }
@@ -1185,6 +1533,36 @@ const Brain = (function() {
       }
       case 'randomuser': return 'generating a random person';
       case 'news': return 'fetching top tech news';
+      case 'httppets': {
+        const parts = parsed.pathname.split('/');
+        const code = parts[1] || '';
+        return code ? 'fetching HTTP status ' + code : 'fetching an HTTP status photo';
+      }
+      case 'animefacts': return 'fetching anime facts';
+      case 'quran': return 'fetching a random Quran verse';
+      case 'bible': return 'fetching a random bible verse';
+      case 'fishwatch': return 'finding a marine species';
+      case 'dogfacts': return 'fetching dog facts';
+      case 'jsonplaceholder': {
+        const parts = parsed.pathname.split('/');
+        const id = parts[2] || '1';
+        return 'fetching mock-rest post ' + id;
+      }
+      case 'countapi': return 'reading the visit counter';
+      case 'fox': return 'fetching a random fox photo';
+      case 'emoji': return 'fetching a random emoji';
+      case 'fruityvice': {
+        const parts = parsed.pathname.split('/');
+        const f = decodeURIComponent(parts[parts.length - 1] || '');
+        return f ? 'fetching nutrition info for "' + f + '"' : 'fetching nutrition info';
+      }
+      case 'deckofcards': return 'drawing a card from the deck';
+      case 'tronalddump': return 'fetching a Trump quote';
+      case 'urban': {
+        const q = parsed.searchParams.get('term') || '';
+        return q ? 'looking up slang "' + decodeURIComponent(q) + '"' : 'looking up a slang term';
+      }
+      case 'shibe': return 'fetching a random shiba photo';
       default: return 'consulting ' + tool;
     }
   }

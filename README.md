@@ -21,7 +21,7 @@ De forma resumida, eu planejo que o HBOT suporte todos esses serviços abaixo:
 > 🟠 Médio-Alto — resposta complexa, multi-endpoint ou rate-limit pesado
 > 🔴 Difícil — estrutura complexa, autenticação obrigatória ou múltiplas APIs encadeadas
 
-> ✅ **Já implementadas (keyless, sem auth, CORS-friendly):** Wikipedia, Open-Meteo, PokéAPI, iTunes, npm, Frankfurter (câmbio), Open Library, Dog CEO (fotos de cachorro), CatFact, REST Countries, JokeAPI, Chuck Norris, NumbersAPI, ipapi.co, BoredAPI, Agify, Genderize, Deezer (busca), Hipolabs Universities, ListenBrainz (último scrobble), wttr.in (clima detalhado), CoinGecko (cripto), goqr.me (QR code), DictionaryAPI, Open Trivia DB (quiz), Kanye.rest, PoetryDB, Datamuse (sinônimos), Jikan (anime), SWAPI (Star Wars), Rick and Morty API, TheMealDB (receitas), GitHub API, RandomUser, Hacker News.
+> ✅ **Já implementadas (keyless, sem auth, CORS-friendly):** Wikipedia, Open-Meteo, PokéAPI, iTunes, npm, Frankfurter (câmbio), Open Library, Dog CEO (fotos de cachorro), CatFact, REST Countries, JokeAPI, Chuck Norris, NumbersAPI, ipapi.co, BoredAPI, Agify, Genderize, Deezer (busca), Hipolabs Universities, ListenBrainz (último scrobble), wttr.in (clima detalhado), CoinGecko (cripto), goqr.me (QR code), DictionaryAPI, Open Trivia DB (quiz), Kanye.rest, PoetryDB, Datamuse (sinônimos), Jikan (anime), SWAPI (Star Wars), Rick and Morty API, TheMealDB (receitas), GitHub API, RandomUser, Hacker News, FishWatch (espécies marinhas), Dog API Facts, AnimeFacts, Bible API, AlQuran Cloud, JSONPlaceholder, CountAPI, randomfox.ca, EmojiHub, Fruityvice, Deck of Cards API, Tronald Dump, Urban Dictionary, Shibe.online, http.dog (cachorro/gatinho por status HTTP).
 
 ### 🌐 Web / Informação
 - 🟢 DuckDuckGo — API HTML/JSON simples, sem auth
