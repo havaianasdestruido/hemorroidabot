@@ -1,0 +1,53 @@
+name: deploy-pages
+
+# Faz o deploy do bot (site 100% estatico) no GitHub Pages.
+# Dispara a cada push no master e manualmente. Roda os testes como gate:
+# se `npm test` falhar, NAO publica nada (mantem a versao atual ar).
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  test-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar dependencias
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      - name: Rodar testes (gate do deploy)
+        run: npm test
+
+      - name: Configurar Pages
+        uses: actions/configure-pages@v5
+
+      - name: Montar site estatico no artefato
+        run: |
+          mkdir -p _site/src
+          cp -r src/. _site/src/
+          cp src/index.html _site/index.html
+
+      - name: Publicar artefato de Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Deploy no Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
