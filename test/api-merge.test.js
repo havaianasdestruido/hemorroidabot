@@ -10,6 +10,7 @@ let loader;
 beforeEach(() => {
   loader = loadScriptFile('./brain.js', { session: 'shared', exposes: ['Brain'] });
   Brain = loader.exposed.Brain;
+  Brain.setDeadToolsEnabled(true); // paridade cobre as 7 mortas tbm
 });
 
 const APIS = {

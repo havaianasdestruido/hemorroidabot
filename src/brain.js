@@ -8,6 +8,26 @@ const Brain = (function() {
   const HISTORY_KEY = 'hemorroida-history';
   let memory = [];            // [{ role, content }]
   let perfLogs = [];          // ultimos desempenhos
+  let deadToolsEnabled = loadDeadFlag();   // APIs mortas: OFF por padrao
+
+  const DEAD_FLAG_KEY = 'hemorroida-dead-tools';
+  function loadDeadFlag() {
+    try { return localStorage.getItem(DEAD_FLAG_KEY) === '1'; } catch (e) { return false; }
+  }
+  function setDeadToolsEnabled(v) {
+    deadToolsEnabled = !!v;
+    try { localStorage.setItem(DEAD_FLAG_KEY, deadToolsEnabled ? '1' : '0'); }
+    catch (e) { /* sem storage (ex: node sem localStorage) */ }
+    return deadToolsEnabled;
+  }
+  function isDeadToolsEnabled() { return deadToolsEnabled; }
+  function getDeadTools() {
+    const out = [];
+    Object.keys(EXTERNAL_TOOLS).forEach(function(k) {
+      if (EXTERNAL_TOOLS[k].dead) out.push(k);
+    });
+    return out;
+  }
 
   function loadHistory() {
     try {
@@ -477,6 +497,7 @@ const Brain = (function() {
     },
     'numbersapi': {
       favicon: 'numbersapi.png',
+      dead: true,
       desc: 'curiosidade sobre um numero (numbersapi)',
   match: /(numer\w*|number|fato.*numer\w*|curiosidade.*numer\w*|trivia|math fact)/i,
   build: function(query) {
@@ -521,6 +542,7 @@ const Brain = (function() {
 },
     'boredapi': {
       favicon: 'boredapi.png',
+      dead: true,
       desc: 'sugestao de atividade/coisa pra fazer (boredapi)',
   match: /(entediado|bored|sugere|sugestao|algo para fazer|o que eu posso fazer|atividade|passa tempo)/i,
   build: function() {
@@ -835,6 +857,7 @@ const Brain = (function() {
     },
     'animefacts': {
       favicon: 'animefacts.png',
+      dead: true,
       desc: 'fato/curiosidade sobre anime (AnimeFacts, keyless)',
       match: /(fato sobre anime|fatos sobre anime|curiosidade do anime|animefacts|fato do anime)/i,
       build: function(query, state) {
@@ -1073,6 +1096,7 @@ const Brain = (function() {
     },
     'fishwatch': {
       favicon: 'fishwatch.png',
+      dead: true,
       desc: 'informacao sobre especies marinhas (FishWatch, keyless)',
       match: /(peixe|fish|especie marinha|frutos do mar|info.*peixe)/i,
       build: function(query, state) {
@@ -1139,6 +1163,7 @@ const Brain = (function() {
     },
     'countapi': {
       favicon: 'countapi.png',
+      dead: true,
       desc: 'contador de visitas (CountAPI, keyless)',
       match: /(contador de visitas|quantas visitas|contagem de visitas|hit counter|quantos acessos)/i,
       build: function() {
@@ -1238,6 +1263,7 @@ const Brain = (function() {
     },
     'tronalddump': {
       favicon: 'tronalddump.png',
+      dead: true,
       desc: 'citacao do donald trump (tronalddump.io, keyless)',
       match: /(tronald dump|tronald|trump|donald trump|fato do trump|frase do trump)/i,
       build: function(query) {
@@ -1285,6 +1311,7 @@ const Brain = (function() {
     },
     'shibe': {
       favicon: 'shibe.png',
+      dead: true,
       desc: 'foto de shiba inu (shibe.online, keyless)',
       match: /(shiba|shibe)/i,
       build: function() {
@@ -1322,7 +1349,9 @@ const Brain = (function() {
   // Intencao de API externa por palavra-chave
   function intentExternal(text) {
     for (const key in EXTERNAL_TOOLS) {
-      if (EXTERNAL_TOOLS[key].match.test(text)) return key;
+      const t = EXTERNAL_TOOLS[key];
+      if (t.dead && !deadToolsEnabled) continue;
+      if (t.match.test(text)) return key;
     }
     return null;
   }
@@ -1571,6 +1600,9 @@ const Brain = (function() {
   function runExternal(tool, text, state) {
     const t = EXTERNAL_TOOLS[tool];
     if (!t) return Promise.resolve('Ferramenta desconhecida.');
+    if (t.dead && !isDeadToolsEnabled()) {
+      return Promise.resolve('[ferramenta morta/offline: habilite "APIs mortas" no painel p/ usala]');
+    }
     const url = t.build(text, state || {});
     return fetch(url, { mode: 'cors' })
       .then(function(r) {
@@ -1601,6 +1633,9 @@ const Brain = (function() {
     externalExampleFor: externalExampleFor,
     chainFor: chainFor,
     runExternal: runExternal,
+    setDeadToolsEnabled: setDeadToolsEnabled,
+    isDeadToolsEnabled: isDeadToolsEnabled,
+    getDeadTools: getDeadTools,
     LOCAL_TOOLS: LOCAL_TOOLS,
     EXTERNAL_TOOLS: EXTERNAL_TOOLS,
     recordPerf: recordPerf,

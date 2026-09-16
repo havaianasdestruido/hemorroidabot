@@ -315,31 +315,51 @@ unloadBtn.onclick = function() {
 // ============ Render tools ============
 (function renderTools() {
   const grid = document.getElementById('tools-grid');
-  Object.keys(Brain.LOCAL_TOOLS).forEach(function(key) {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.textContent = key;
-    btn.onclick = function() {
-      const text = Brain.exampleFor(key);
-      addMessage(text, 'user');
-      const resp = Brain.runLocal(key, text);
-      addMessage('[FERRAMENTA ' + key + ']\n' + resp, 'bot');
-    };
-    grid.appendChild(btn);
-  });
-  Object.keys(Brain.EXTERNAL_TOOLS).forEach(function(key) {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.textContent = 'api: ' + key;
-    btn.onclick = function() {
-      const text = Brain.externalExampleFor(key);
-      addMessage(text, 'user');
-      Brain.runExternal(key, text, { coords: coords }).then(function(resp) {
+
+  function canShow(key) {
+    const t = Brain.EXTERNAL_TOOLS[key];
+    return !(t && t.dead && !Brain.isDeadToolsEnabled());
+  }
+
+  function rebuild() {
+    grid.innerHTML = '';
+    Object.keys(Brain.LOCAL_TOOLS).forEach(function(key) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = key;
+      btn.onclick = function() {
+        const text = Brain.exampleFor(key);
+        addMessage(text, 'user');
+        const resp = Brain.runLocal(key, text);
         addMessage('[FERRAMENTA ' + key + ']\n' + resp, 'bot');
-      });
-    };
-    grid.appendChild(btn);
-  });
+      };
+      grid.appendChild(btn);
+    });
+    Object.keys(Brain.EXTERNAL_TOOLS).forEach(function(key) {
+      if (!canShow(key)) return;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = 'api: ' + key;
+      btn.onclick = function() {
+        const text = Brain.externalExampleFor(key);
+        addMessage(text, 'user');
+        Brain.runExternal(key, text, { coords: coords }).then(function(resp) {
+          addMessage('[FERRAMENTA ' + key + ']\n' + resp, 'bot');
+        });
+      };
+      grid.appendChild(btn);
+    });
+  }
+
+  const toggle = document.getElementById('dead-api-toggle');
+  if (toggle) {
+    toggle.checked = Brain.isDeadToolsEnabled();
+    toggle.addEventListener('change', function() {
+      Brain.setDeadToolsEnabled(toggle.checked);
+      rebuild();
+    });
+  }
+  rebuild();
 })();
 
 // ============ Boot ============
