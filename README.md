@@ -21,59 +21,58 @@ De forma resumida, eu planejo que o HBOT suporte todos esses serviços abaixo:
 > 🟠 Médio-Alto — resposta complexa, multi-endpoint ou rate-limit pesado
 > 🔴 Difícil — estrutura complexa, autenticação obrigatória ou múltiplas APIs encadeadas
 
-> ✅ **Já implementadas (keyless, sem auth, CORS-friendly):** Wikipedia, Open-Meteo, PokéAPI, iTunes, npm, Frankfurter (câmbio), Open Library, Dog CEO (fotos de cachorro), CatFact, REST Countries, JokeAPI, Chuck Norris, NumbersAPI, ipapi.co, BoredAPI, Agify, Genderize, Deezer (busca), Hipolabs Universities, ListenBrainz (último scrobble), wttr.in (clima detalhado), CoinGecko (cripto), goqr.me (QR code), DictionaryAPI, Open Trivia DB (quiz), Kanye.rest, PoetryDB, Datamuse (sinônimos), Jikan (anime), SWAPI (Star Wars), Rick and Morty API, TheMealDB (receitas), GitHub API, RandomUser, Hacker News, FishWatch (espécies marinhas), Dog API Facts, AnimeFacts, Bible API, AlQuran Cloud, JSONPlaceholder, CountAPI, randomfox.ca, EmojiHub, Fruityvice, Deck of Cards API, Tronald Dump, Urban Dictionary, Shibe.online, http.dog (cachorro/gatinho por status HTTP).
 
 ### 🌐 Web / Informação
 - 🟢 DuckDuckGo — API HTML/JSON simples, sem auth
-- 🟢 Wikipedia — REST API direta, sem auth
+- ✅ 🟢 Wikipedia — REST API direta, sem auth
 - 🟡 Wikidata — SPARQL complexo mas sem auth
 - 🟠 OpenStreetMap — Nominatim + Overpass exigem queries específicas
 - 🟠 Nominatim — rate-limit rigoroso, reverse geocoding preciso
 - 🟠 Overpass API — linguagem de query própria, payloads grandes
-- 🟢 Open-Meteo — REST simples, sem auth, JSON direto
+- ✅ 🟢 Open-Meteo — REST simples, sem auth, JSON direto
 - 🟢 Sunrise-Sunset API — GET simples, poucos parâmetros
 
 ### ⏱️ Utilidades
 - 🟢 WorldTimeAPI — GET simples por timezone
-- 🟢 Frankfurter API — conversão de moedas GET direto
+- ✅ 🟢 Frankfurter API — conversão de moedas GET direto
 - 🟡 Calendarific — exige API key (gratuita)
 - 🟡 APIs públicas de calendários/feriados — variam muito entre países
 
 ### 📚 Conhecimento / Pesquisa
-- 🟢 Open Library — REST simples, sem auth
+- ✅ 🟢 Open Library — REST simples, sem auth
 - 🟡 Crossref — JSON direto mas metadados densos
 - 🟡 arXiv — Atom/XML, precisa parsear feed
 - 🟠 Internet Archive — API extensa, multiplos serviços
 - 🟡 OpenAlex — REST simples mas payload grande
 
 ### 🎮 Games / Anime
-- 🟢 PokéAPI — REST JSON excelente, sem auth, bem documentada
-- 🟢 Jikan — REST JSON, sem auth, wrapper MAL
+- ✅ 🟢 PokéAPI — REST JSON excelente, sem auth, bem documentada
+- ✅ 🟢 Jikan — REST JSON, sem auth, wrapper MAL
 - 🟡 AniList — GraphQL, precisa montar queries
 
 ### 🎵 Música
-- 🟢 Last.FM — GET simples, sem auth (limitada)
+- ✅ 🟢 Last.FM — GET simples, sem auth (limitada)
 - 🟡 MusicBrainz — rate-limit estrito, formato ISO especial
-- 🟡 ListenBrainz — exige Submission API + auth para submissões
-- 🔴 Deezer API — API key obrigatória, CORS restrito no browser
-- 🟢 iTunes Search API — GET simples, sem auth
+- ✅ 🟡 ListenBrainz — exige Submission API + auth p/ submissões
+- ✅ 🟠 Deezer API — API key obrigatória, CORS restrito no browser
+- ✅ 🟢 iTunes Search API — GET simples, sem auth
 - 🟢 Lyrics.ovh — GET simples, sem auth (limitada)
 
 ### 💻 Desenvolvimento
-- 🟡 GitHub API — rate limit 60/h sem auth, mais com token
-- 🟢 npm Registry API — GET direto, sem auth
+- ✅ 🟡 GitHub API — rate limit 60/h sem auth, mais com token
+- ✅ 🟢 npm Registry API — GET direto, sem auth
 - 🟢 PyPI JSON API — JSON direto, sem auth
 - 🟡 MDN — API de busca, resposta HTML que precisa parsear
 - 🟡 Stack Exchange API — rate limit, precisa de sort/filter
 - 🟡 Libraries.io — exige API key
 
 ### 🧮 Ferramentas locais
-- 🟢 Calculator — lógica JS pura, sem API externa
+- ✅ 🟢 Calculator — lógica JS pura, sem API externa
 - 🟢 Unit Converter — lógica JS pura, sem API externa
-- 🟢 JSON Formatter — lógica JS pura, sem API externa
-- 🟢 Base64 Encoder/Decoder — nativo JS (atob/btoa)
-- 🟢 UUID Generator — `crypto.randomUUID()` nativo
+- ✅ 🟢 JSON Formatter — lógica JS pura, sem API externa
+- ✅ 🟢 Base64 Encoder/Decoder — nativo JS (atob/btoa)
+- ✅ 🟢 UUID Generator — `crypto.randomUUID()` nativo
 - 🟢 Regex Tester — regex nativo JS
-- 🟢 Timestamp Converter — `Date` nativo JS
-- 🟢 Color Converter — lógica matemática simples
-- 🟢 Text Counter — contagem de chars/palavras, JS puro
+- ✅ 🟢 Timestamp Converter — `Date` nativo JS
+- ✅ 🟢 Color Converter — lógica matemática simples
+- ✅ 🟢 Text Counter — contagem de chars/palavras, JS puro
