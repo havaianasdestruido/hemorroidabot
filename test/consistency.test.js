@@ -336,10 +336,12 @@ describe('consistency: models.js KNOWN_MODELS integrity', () => {
       const m = /id\s*:\s*['"]([^'"]+)['"]/.exec(e);
       if (m) known.add(m[1]);
     }
+    const modelSelect = /<select[^>]*\bid\s*=\s*["']model-select["'][^>]*>([\s\S]*?)<\/select>/i.exec(html);
+    assert.ok(modelSelect, 'model-select not found');
     const opts = [];
     const optRe = /<option\b[^>]*\bvalue\s*=\s*["']([^"']*)["'][^>]*>/g;
     let m;
-    while ((m = optRe.exec(html)) !== null) opts.push(m[1]);
+    while ((m = optRe.exec(modelSelect[1])) !== null) opts.push(m[1]);
     const missing = opts.filter((v) => !known.has(v));
     assert.deepEqual(missing, [], 'model-select options without a KNOWN_MODELS entry: ' + missing.join(', '));
   });

@@ -6,6 +6,7 @@ const WLLAMA_WASM_DEFAULT = '../vendor/wllama/wasm/wllama.wasm';
 const WLLAMA_COMPAT_JS = '../vendor/wllama-compat/wllama.js';
 const WLLAMA_COMPAT_WASM = '../vendor/wllama-compat/wllama.wasm';
 const CACHE_NAME_DEFAULTS = 'hemorroida-models-v1';
+const translate = function(key, vars, fallback) { return typeof I18n !== 'undefined' ? I18n.t(key, vars) : fallback; };
 
 let WllamaModule = null;
 let instance = null;
@@ -19,7 +20,7 @@ async function getWllamaClass() {
 
 function ensureEngine() {
   if (!instance) {
-    throw new Error('Engine nao inicializado. Carregue um modelo primeiro.');
+    throw new Error(translate('engine.notInitialized', null, 'Engine nao inicializado. Carregue um modelo primeiro.'));
   }
   return instance;
 }
@@ -30,7 +31,7 @@ function getCachedBlob(repo, file, revision) {
   const url = 'https://huggingface.co/' + repo + '/resolve/' + revision + '/' + file;
   return caches.open(CACHE_NAME_DEFAULTS).then(function(cache) {
     return cache.match(url).then(function(resp) {
-      if (!resp) throw new Error('Modelo nao esta em cache. Baixe primeiro.');
+      if (!resp) throw new Error(translate('engine.notCached', null, 'Modelo nao esta em cache. Baixe primeiro.'));
       return resp.blob();
     });
   });

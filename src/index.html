@@ -10,6 +10,7 @@
         h2 { font-size: 1.2em; }
         textarea { width: 100%; }
         select, input { width: 100%; box-sizing: border-box; }
+        #language-select { width: auto; }
         pre { white-space: pre-wrap; }
         .row { display: flex; gap: 6px; flex-wrap: wrap; }
         .rec { color: #c00; font-weight: bold; }
@@ -23,12 +24,12 @@
 </head>
 <body>
 
-    <h1>HemorróidaBot</h1>
-    <p>MEGABRAIN local so com JS no front-end.</p>
+    <div class="row"><h1>HemorróidaBot</h1><label for="language-select" data-i18n="language.label">Idioma</label><select id="language-select" aria-label="Idioma"><option value="pt-BR" data-i18n="language.pt">Portugues (Brasil)</option><option value="en-US" data-i18n="language.en">English (US)</option></select></div>
+    <p data-i18n="app.tagline">MEGABRAIN local so com JS no front-end.</p>
 
     <form id="main-form" onsubmit="return false;">
         <fieldset>
-            <legend>Modelo</legend>
+            <legend data-i18n="model.legend">Modelo</legend>
             <select id="model-select">
                 <option value="qwen-3b">Qwen 2.5 3B</option>
                 <option value="qwen-7b">Qwen 2.5 7B</option>
@@ -38,18 +39,18 @@
         </fieldset>
 
         <fieldset>
-            <legend>Baixar modelo do HuggingFace</legend>
-            <label for="repo-input">Repo (revisao main):</label>
-            <input id="repo-input" type="text" placeholder="autor/modelo-GGUF">
-            <label for="file-input">Arquivo:</label>
-            <input id="file-input" type="text" placeholder="modelo-q4_k_m.gguf">
+            <legend data-i18n="download.legend">Baixar modelo do HuggingFace</legend>
+            <label for="repo-input" data-i18n="download.repo">Repo (revisao main):</label>
+            <input id="repo-input" type="text" placeholder="autor/modelo-GGUF" data-i18n-placeholder="download.repoPlaceholder">
+            <label for="file-input" data-i18n="download.file">Arquivo:</label>
+            <input id="file-input" type="text" placeholder="modelo-q4_k_m.gguf" data-i18n-placeholder="download.filePlaceholder">
             <br><br>
             <div class="row">
-                <button type="button" id="list-btn">Listar arquivos</button>
-                <button type="button" id="dl-btn">Baixar e cachear</button>
-                <button type="button" id="cache-btn">Ver cache</button>
-                <button type="button" id="load-engine-btn">Carregar modelo local</button>
-                <button type="button" id="unload-btn">Descarregar</button>
+                <button type="button" id="list-btn" data-i18n="download.list">Listar arquivos</button>
+                <button type="button" id="dl-btn" data-i18n="download.download">Baixar e cachear</button>
+                <button type="button" id="cache-btn" data-i18n="download.cache">Ver cache</button>
+                <button type="button" id="load-engine-btn" data-i18n="download.load">Carregar modelo local</button>
+                <button type="button" id="unload-btn" data-i18n="download.unload">Descarregar</button>
             </div>
             <p id="dl-status"></p>
             <progress id="dl-progress" max="100" value="0" style="display:none;width:100%"></progress>
@@ -57,50 +58,51 @@
         </fieldset>
 
         <fieldset>
-            <legend>Entrada / Voz</legend>
+            <legend data-i18n="voice.legend">Entrada / Voz</legend>
             <div class="row">
-                <label><input type="radio" name="mode" value="text" checked> Texto</label>
-                <label><input type="radio" name="mode" value="voice"> Voz</label>
+                <label><input type="radio" name="mode" value="text" checked> <span data-i18n="voice.text">Texto</span></label>
+                <label><input type="radio" name="mode" value="voice"> <span data-i18n="voice.voice">Voz</span></label>
             </div>
             <div class="row">
-                <button type="button" id="mic-btn" disabled>🎤 Ditar</button>
-                <label><input type="checkbox" id="tts-chk"> Falar resposta (TTS)</label>
+                <button type="button" id="mic-btn" disabled data-i18n="voice.dictate">🎤 Ditar</button>
+                <label><input type="checkbox" id="tts-chk"> <span data-i18n="voice.tts">Falar resposta (TTS)</span></label>
             </div>
         </fieldset>
 
         <fieldset>
-            <legend>Desempenho</legend>
-            <div id="perf">Sem dados. Envie uma mensagem com um modelo carregado.</div>
+            <legend data-i18n="performance.legend">Desempenho</legend>
+            <div id="perf" data-i18n="performance.empty">Sem dados. Envie uma mensagem com um modelo carregado.</div>
         </fieldset>
 
         <fieldset>
-            <legend>Chat</legend>
+            <legend data-i18n="chat.legend">Chat</legend>
             <div class="row">
-                <button type="button" id="clear-btn">Limpar historico</button>
+                <button type="button" id="clear-btn" data-i18n="chat.clear">Limpar historico</button>
             </div>
             <div id="messages"></div>
         </fieldset>
 
         <fieldset>
-            <legend>Mensagem</legend>
-            <label for="user-input">Digite ou dite:</label>
-            <textarea id="user-input" rows="3" placeholder="Sua mensagem..."></textarea>
+            <legend data-i18n="message.legend">Mensagem</legend>
+            <label for="user-input" data-i18n="message.label">Digite ou dite:</label>
+            <textarea id="user-input" rows="3" placeholder="Sua mensagem..." data-i18n-placeholder="message.placeholder"></textarea>
             <br>
-            <button type="button" id="send-btn" onclick="sendMessage()">Enviar</button>
+            <button type="button" id="send-btn" onclick="sendMessage()" data-i18n="message.send">Enviar</button>
         </fieldset>
     </form>
 
     <fieldset>
-        <legend>Ferramentas locais</legend>
+        <legend data-i18n="tools.legend">Ferramentas locais</legend>
         <div id="tools-grid"></div>
         <div class="tool-opt-line">
             <label>
                 <input type="checkbox" id="dead-api-toggle">
-                Habilitar APIs mortas/offline (desativado por padrao)
+                <span data-i18n="tools.dead">Habilitar APIs mortas/offline (desativado por padrao)</span>
             </label>
         </div>
     </fieldset>
 
+    <script src="src/i18n.js"></script>
     <script src="src/models.js"></script>
     <script src="src/brain.js"></script>
     <script src="src/app.js"></script>

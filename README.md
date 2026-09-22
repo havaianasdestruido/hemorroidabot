@@ -21,7 +21,11 @@ A interface dele é idiotamente simples, é literalmente _plain HTML_, ou seja, 
 ## Funcionalidade
 Você pode ditar / "conversar" com o bot, ou pode digitar com ele.
 
-Você pode alternar entre qual modelo você vai querer usar
+Você pode alternar entre qual modelo você vai querer usar.
+
+## Idiomas
+
+A interface inclui traducoes client-side sem dependencias em `src/i18n.js`. Use o seletor **Idioma** para alternar entre `pt-BR` (padrao) e `en-US`; a escolha fica salva no `localStorage` em `hemorroida-locale`. Textos dinamicos da interface, mensagens de estado, erros centrais e ferramentas locais tambem usam o catalogo de traducoes.
 
 ## APIs
 De forma resumida, eu planejo que o HBOT suporte todos esses serviços abaixo:

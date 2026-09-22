@@ -6,16 +6,19 @@ const ttsChk = document.getElementById('tts-chk');
 const clearBtn = document.getElementById('clear-btn');
 const unloadBtn = document.getElementById('unload-btn');
 const perfEl = document.getElementById('perf');
+const languageSelect = document.getElementById('language-select');
+const t = function(key, vars) { return I18n.t(key, vars); };
 
 let voiceMode = false;
 let coords = null;
+let perfIsDefault = true;
 
 // ============ Utils de DOM ============
 function addMessage(text, sender, opts) {
   const div = document.createElement('div');
   div.className = 'msg msg-' + (sender || 'bot');
-  const time = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-  const who = sender === 'user' ? 'Voce' : modelSelect.value;
+  const time = new Date().toLocaleTimeString(I18n.getLocale(), { hour: '2-digit', minute: '2-digit' });
+  const who = sender === 'user' ? t('message.you') : modelSelect.value;
   if (opts && opts.chain && opts.chain.length) {
     const chain = document.createElement('div');
     chain.className = 'toolchain';
@@ -35,7 +38,7 @@ function addMessage(text, sender, opts) {
     });
     const meta = document.createElement('div');
     meta.className = 'msg-meta';
-    meta.textContent = '[' + time + '] ' + who + ' (tool call)';
+    meta.textContent = '[' + time + '] ' + who + ' (' + t('message.toolCall') + ')';
     div.appendChild(meta);
     div.appendChild(chain);
   } else {
@@ -50,26 +53,21 @@ function addMessage(text, sender, opts) {
 
 // ============ Sistema / Memoria ============
 function systemPrompt() {
-  let p = 'Voce e o HemorroidaBot, um assistente local que roda sem internet. ';
-  p += 'Responda em portugues, seja claro e direto. Se o usuario pedir algo que ';
-  p += 'voce nao tem dados, diga que nao sabe. Voce recebe o resultado de ferramentas ';
-  p += 'marcado como [FERRAMENTA] quando aplicavel. Use esse dado na resposta.';
-  return p;
+  return t('system.prompt');
 }
 
 function addPerf(perf) {
+  perfIsDefault = false;
   Brain.recordPerf(perf);
   const sps = perf.charsPerSec ? perf.charsPerSec.toFixed(1) : '?';
-  perfEl.textContent = 'Tokens(aprox): ' + perf.approxTokens +
-    ' | Tempo: ' + (perf.ms / 1000).toFixed(1) + 's' +
-    ' | Velocidade: ' + sps + ' chars/s';
+  perfEl.textContent = t('performance.stats', { tokens: perf.approxTokens, seconds: (perf.ms / 1000).toFixed(1), speed: sps });
 }
 
 function speak(text) {
   if (!ttsChk || !ttsChk.checked) return;
   if (!('speechSynthesis' in window)) return;
   const utter = new SpeechSynthesisUtterance(text.replace(/\n/g, ' '));
-  utter.lang = 'pt-BR';
+  utter.lang = I18n.getLocale();
   window.speechSynthesis.cancel();
   window.speechSynthesis.speak(utter);
 }
@@ -81,8 +79,8 @@ async function handleMessage(text) {
   if (local) {
     let result;
     try { result = Brain.runLocal(local, text); }
-    catch (e) { result = 'Erro na ferramenta: ' + e.message; }
-    const out = '[FERRAMENTA ' + local + ']\n' + result;
+    catch (e) { result = t('app.toolError', { error: e.message }); }
+    const out = t('app.toolResult', { tool: local, result: result });
     addMessage(out, 'bot');
     Brain.addMessage('user', text);
     Brain.addMessage('assistant', out);
@@ -103,7 +101,7 @@ async function handleMessage(text) {
       return;
     }
     const msgs = Brain.recentMemory(12);
-    msgs.push({ role: 'user', content: 'Com base no resultado da ferramenta: ' + data + '\nResponda ao usuario: ' + text });
+    msgs.push({ role: 'user', content: t('app.toolContext', { data: data, text: text }) });
     msgs.unshift({ role: 'system', content: systemPrompt() });
     await engineRespond(msgs);
     return;
@@ -119,10 +117,10 @@ async function handleMessage(text) {
 async function engineRespond(msgs) {
   const engine = window.HemorroidaEngine;
   if (!engine || !engine.isModelLoaded()) {
-    addMessage('(Nenhum modelo carregado. Baixe e clique "Carregar modelo local".)', 'bot');
+    addMessage(t('app.noModel'), 'bot');
     return;
   }
-  const statusDiv = addMessage('Processando...', 'bot');
+  const statusDiv = addMessage(t('app.processing'), 'bot');
   try {
     const botDiv = addMessage('', 'bot');
     const pre = botDiv.querySelector('pre');
@@ -143,12 +141,12 @@ async function engineRespond(msgs) {
     speak(res.text);
   } catch (e) {
     statusDiv.remove();
-    addMessage('Erro na inferencia: ' + e.message, 'bot');
+    addMessage(t('app.inferenceError', { error: e.message }), 'bot');
   }
 }
 
 function timeNow() {
-  return new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  return new Date().toLocaleTimeString(I18n.getLocale(), { hour: '2-digit', minute: '2-digit' });
 }
 
 // ============ Enviar ============
@@ -163,18 +161,18 @@ async function sendMessage() {
 // ============ Voz ============
 function setupVoice() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) { micBtn.disabled = true; micBtn.textContent = '🎤 Voz nao suportada'; return; }
+  if (!SR) { micBtn.disabled = true; micBtn.textContent = t('voice.unsupported'); return; }
   micBtn.disabled = false;
   let rec = null;
   micBtn.onclick = function() {
     if (rec && rec.running) { rec.stop(); return; }
     rec = new SR();
-    rec.lang = 'pt-BR';
+    rec.lang = I18n.getLocale();
     rec.continuous = false;
     rec.interimResults = false;
     rec.running = true;
     micBtn.classList.add('rec');
-    micBtn.textContent = '🛑 Gravando...';
+    micBtn.textContent = t('voice.recording');
     rec.onresult = function(ev) {
       const txt = ev.results[0][0].transcript;
       userInput.value = txt;
@@ -183,9 +181,9 @@ function setupVoice() {
     rec.onend = function() {
       rec.running = false;
       micBtn.classList.remove('rec');
-      micBtn.textContent = '🎤 Ditar';
+      micBtn.textContent = t('voice.dictate');
     };
-    rec.onerror = function() { micBtn.classList.remove('rec'); micBtn.textContent = '🎤 Ditar'; };
+    rec.onerror = function() { micBtn.classList.remove('rec'); micBtn.textContent = t('voice.dictate'); };
     rec.start();
   };
 }
@@ -210,7 +208,8 @@ clearBtn.onclick = function() {
 unloadBtn.onclick = function() {
   if (window.HemorroidaEngine) {
     window.HemorroidaEngine.unloadModel().then(function() {
-      perfEl.textContent = 'Modelo descarregado.';
+      perfIsDefault = false;
+      perfEl.textContent = t('app.unloaded');
     });
   }
 };
@@ -246,58 +245,58 @@ unloadBtn.onclick = function() {
   listBtn.onclick = function() {
     var repo = repoInput.value.trim();
     if (!repo) { var known = ModelManager.findKnown(modelSelect.value); if (known) repo = known.repo; }
-    if (!repo) { setStatus('Informe um repo.'); return; }
+    if (!repo) { setStatus(t('download.enterRepo')); return; }
     fileListEl.innerHTML = '';
-    setStatus('Listando arquivos de ' + repo + '...');
+    setStatus(t('download.listing', { repo: repo }));
     ModelManager.listFiles(repo).then(function(tree) {
       currentRepo = repo;
       currentFiles = tree.map(function(t) { return t.path; });
       const gguf = currentFiles.filter(function(f) { return /\.gguf$/i.test(f); });
       fileListEl.innerHTML = 'GGUF:\n' + gguf.join('\n') + '\n\nTodos (' + tree.length + '):\n' + currentFiles.join('\n');
-      setStatus(currentFiles.length + ' arquivo(s). ' + gguf.length + ' GGUF.');
-    }).catch(function(e) { setStatus('Erro: ' + e.message); });
+      setStatus(t('download.files', { count: currentFiles.length, gguf: gguf.length }));
+    }).catch(function(e) { setStatus(t('download.error', { error: e.message })); });
   };
 
   dlBtn.onclick = function() {
     var sel = currentSelection();
-    if (!sel.repo || !sel.file) { setStatus('Defina repo e arquivo.'); return; }
+    if (!sel.repo || !sel.file) { setStatus(t('download.select')); return; }
     progressEl.style.display = 'inline';
     progressEl.value = 0;
-    setStatus('Baixando ' + sel.file + ' (' + sel.repo + ')...');
+    setStatus(t('download.downloading', { file: sel.file, repo: sel.repo }));
     ModelManager.download(sel.repo, sel.file, 'main', function(received, total) {
       progressEl.value = (received / total) * 100;
-      setStatus('Baixando: ' + ModelManager.formatBytes(received) + ' de ' + ModelManager.formatBytes(total));
+      setStatus(t('download.progress', { received: ModelManager.formatBytes(received), total: ModelManager.formatBytes(total) }));
     }).then(function(blob) {
       progressEl.value = 100;
-      setStatus('Concluido! ' + ModelManager.formatBytes(blob.size) + ' salvo em cache.');
-      addMessage('Modelo ' + sel.file + ' baixado e cacheado (' + ModelManager.formatBytes(blob.size) + ').', 'bot');
-    }).catch(function(e) { setStatus('Erro: ' + e.message); });
+      setStatus(t('download.complete', { size: ModelManager.formatBytes(blob.size) }));
+      addMessage(t('download.cached', { file: sel.file, size: ModelManager.formatBytes(blob.size) }), 'bot');
+    }).catch(function(e) { setStatus(t('download.error', { error: e.message })); });
   };
 
   cacheBtn.onclick = function() {
     caches.keys().then(function(keys) {
-      if (!keys.length) { setStatus('Cache vazio.'); return; }
+      if (!keys.length) { setStatus(t('download.cacheEmpty')); return; }
       Promise.all(keys.map(function(name) {
         return caches.open(name).then(function(c) {
-          return c.keys().then(function(reqs) { return name + ': ' + reqs.length + ' arquivo(s)'; });
+          return c.keys().then(function(reqs) { return t('download.cacheFiles', { name: name, count: reqs.length }); });
         });
-      })).then(function(lines) { setStatus('Caches:\n' + lines.join('\n')); });
+      })).then(function(lines) { setStatus(t('download.cacheList', { items: lines.join('\n') })); });
     });
   };
 
   if (loadEngineBtn) {
     loadEngineBtn.onclick = function() {
       var sel = currentSelection();
-      if (!sel.repo || !sel.file) { setStatus('Defina repo e arquivo.'); return; }
-      setStatus('Inicializando engine WASM e carregando modelo... pode demorar.');
+      if (!sel.repo || !sel.file) { setStatus(t('download.select')); return; }
+      setStatus(t('download.loading'));
       var waitForEngine = function() {
         if (window.HemorroidaEngine) {
           window.HemorroidaEngine.loadModelFromCache(sel.repo, sel.file, 'main')
             .then(function(info) {
-              setStatus('Modelo carregado: ' + info.file + ' (pronto).');
-              addMessage('Engine WASM pronta. Modelo local carregado: ' + info.file, 'bot');
+              setStatus(t('download.loaded', { file: info.file }));
+              addMessage(t('download.engineReady', { file: info.file }), 'bot');
             })
-            .catch(function(e) { setStatus('Erro: ' + e.message); });
+            .catch(function(e) { setStatus(t('download.error', { error: e.message })); });
         } else {
           setTimeout(waitForEngine, 100);
         }
@@ -361,6 +360,18 @@ unloadBtn.onclick = function() {
   }
   rebuild();
 })();
+
+// ============ Idioma ============
+if (languageSelect) {
+  languageSelect.value = I18n.getLocale();
+  languageSelect.addEventListener('change', function() { I18n.setLocale(languageSelect.value); });
+}
+I18n.onChange(function(locale) {
+  if (languageSelect) languageSelect.value = locale;
+  if (!micBtn.classList.contains('rec')) micBtn.textContent = micBtn.disabled ? t('voice.unsupported') : t('voice.dictate');
+  if (perfIsDefault) perfEl.textContent = t('performance.empty');
+});
+I18n.apply();
 
 // ============ Boot ============
 Brain.loadHistory();

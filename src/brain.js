@@ -4,6 +4,10 @@
 
 const Brain = (function() {
 
+  function translate(key, vars, fallback) {
+    return typeof I18n !== 'undefined' ? I18n.t(key, vars) : fallback;
+  }
+
   // ---- Memoria da conversa ----
   const HISTORY_KEY = 'hemorroida-history';
   let memory = [];            // [{ role, content }]
@@ -61,9 +65,9 @@ const Brain = (function() {
       desc: 'calculadora (expressao matematica)',
       handle: function(input) {
         const safe = input.replace(/[^0-9+\-*/().%.\s]/g, '').trim();
-        if (!safe) return 'Expressao vazia';
+        if (!safe) return translate('brain.emptyExpression', null, 'Expressao vazia');
         try { return '' + Function('"use strict"; return (' + safe + ')')(); }
-        catch (e) { return 'Expressao invalida'; }
+        catch (e) { return translate('brain.invalidExpression', null, 'Expressao invalida'); }
       }
     },
     'uuid': {
@@ -80,33 +84,33 @@ const Brain = (function() {
     'base64': {
       desc: 'codifica/decodifica base64',
       handle: function(input) {
-        const clean = input.replace(/base64|codificar|decodificar/gi, '').trim();
+        const clean = input.replace(/base64|codificar|decodificar|encode|decode/gi, '').trim();
         if (/^[A-Za-z0-9+/=]+$/.test(clean) && clean.length % 4 === 0) {
-          try { return 'Decodificado: ' + atob(clean); } catch (e) {}
+          try { return translate('brain.decoded', { value: atob(clean) }, 'Decodificado: ' + atob(clean)); } catch (e) {}
         }
-        try { return 'Base64: ' + btoa(clean); } catch (e) { return 'Erro'; }
+        try { return translate('brain.base64', { value: btoa(clean) }, 'Base64: ' + btoa(clean)); } catch (e) { return translate('brain.error', null, 'Erro'); }
       }
     },
     'json-formatter': {
       desc: 'formata JSON',
       handle: function(input) {
-        const clean = input.replace(/formatar|json|formatter/gi, '').trim();
+        const clean = input.replace(/formatar|format|json|formatter/gi, '').trim();
         try { return JSON.stringify(JSON.parse(clean), null, 2); }
-        catch (e) { return 'JSON invalido'; }
+        catch (e) { return translate('brain.invalidJson', null, 'JSON invalido'); }
       }
     },
     'text-counter': {
       desc: 'conta caracteres/palavras/linhas',
       handle: function(input) {
-        const t = input.replace(/contar|caracteres|palavras|word count/gi, '').trim();
-        return 'Caracteres: ' + t.length + '\nPalavras: ' + t.split(/\s+/).filter(Boolean).length + '\nLinhas: ' + t.split('\n').length;
+        const t = input.replace(/contar|count|caracteres|characters|palavras|words|word count/gi, '').trim();
+        return translate('brain.characters', { characters: t.length, words: t.split(/\s+/).filter(Boolean).length, lines: t.split('\n').length }, 'Caracteres: ' + t.length + '\nPalavras: ' + t.split(/\s+/).filter(Boolean).length + '\nLinhas: ' + t.split('\n').length);
       }
     },
     'color-converter': {
       desc: 'converte cor HEX em RGB/HSL',
       handle: function(input) {
         const hex = input.match(/#?[0-9a-fA-F]{6}/);
-        if (!hex) return 'Forneca HEX ex: #ff5500';
+        if (!hex) return translate('brain.hexRequired', null, 'Forneca HEX ex: #ff5500');
         const h = hex[0].replace('#', '');
         const r = parseInt(h.substr(0,2),16), g = parseInt(h.substr(2,2),16), b = parseInt(h.substr(4,2),16);
         return 'HEX #' + h.toUpperCase() + '\nRGB: ' + r + ', ' + g + ', ' + b;
@@ -1332,12 +1336,12 @@ const Brain = (function() {
   function intentLocal(text) {
     const lower = text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
     const map = [
-      [/calcular|conta|quanto e|quanto da|soma|multipl/, 'calculator'],
+      [/calcular|calculate|conta|quanto e|quanto da|soma|sum|multipl/, 'calculator'],
       [/uuid|gerar id/, 'uuid'],
-      [/timestamp|unix|epoch|que horas|data atual/, 'timestamp'],
+      [/timestamp|unix|epoch|que horas|data atual|what time|current date/, 'timestamp'],
       [/base64|codificar|decodificar/, 'base64'],
       [/formatar json|json formatter|pretty json|formata json|formata esse json/, 'json-formatter'],
-      [/contar|caracteres|palavras/, 'text-counter'],
+      [/contar|count|caracteres|characters|palavras|words/, 'text-counter'],
       [/cor|hex|rgb|hsl/, 'color-converter']
     ];
     for (const [re, tool] of map) {
@@ -1599,9 +1603,9 @@ const Brain = (function() {
   // Executa API externa (reuso de fetch + parse) - retorna Promise<string>
   function runExternal(tool, text, state) {
     const t = EXTERNAL_TOOLS[tool];
-    if (!t) return Promise.resolve('Ferramenta desconhecida.');
+    if (!t) return Promise.resolve(translate('brain.unknownTool', null, 'Ferramenta desconhecida.'));
     if (t.dead && !isDeadToolsEnabled()) {
-      return Promise.resolve('[ferramenta morta/offline: habilite "APIs mortas" no painel p/ usala]');
+      return Promise.resolve(translate('brain.deadTool', null, '[ferramenta morta/offline: habilite "APIs mortas" no painel p/ usala]'));
     }
     const url = t.build(text, state || {});
     return fetch(url, { mode: 'cors' })
@@ -1610,7 +1614,7 @@ const Brain = (function() {
         return r.json();
       })
       .then(t.parse)
-      .catch(function(e) { return 'Erro ao consultar ' + tool + ': ' + e.message; });
+      .catch(function(e) { return translate('brain.requestError', { tool: tool, error: e.message }, 'Erro ao consultar ' + tool + ': ' + e.message); });
   }
 
   // ---- Monitor de desempenho ----

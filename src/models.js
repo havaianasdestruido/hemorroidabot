@@ -2,6 +2,7 @@
 // Baixa modelos do HuggingFace e salva em cache no navegador (Cache Storage API).
 
 var ModelManager = (function() {
+  function translate(key, vars, fallback) { return typeof I18n !== 'undefined' ? I18n.t(key, vars) : fallback; }
   var CACHE_NAME = 'hemorroida-models-v1';
 
   // Modelos conhecidos (repo HF + arquivo .gguf principal sugerido).
@@ -15,7 +16,7 @@ var ModelManager = (function() {
   // Abre o cache de modelos (persistente no navegador).
   function openCache() {
     if (!('caches' in window)) {
-      throw new Error('Cache API nao suportada neste navegador.');
+      throw new Error(translate('models.cacheUnsupported', null, 'Cache API nao suportada neste navegador.'));
     }
     return caches.open(CACHE_NAME);
   }
@@ -40,7 +41,7 @@ var ModelManager = (function() {
   function downloadFile(url, onProgress) {
     return fetch(url, { mode: 'cors' }).then(function(response) {
       if (!response.ok) {
-        throw new Error('Falha no download: HTTP ' + response.status);
+        throw new Error(translate('models.downloadFailed', { status: response.status }, 'Falha no download: HTTP ' + response.status));
       }
       var contentLength = +response.headers.get('Content-Length') || 0;
       var reader = response.body.getReader();
@@ -90,7 +91,7 @@ var ModelManager = (function() {
     var rev = revision || 'main';
     var api = 'https://huggingface.co/api/models/' + repo + '/tree/' + rev;
     return fetch(api, { mode: 'cors' }).then(function(r) {
-      if (!r.ok) throw new Error('Repo nao encontrado: ' + repo);
+      if (!r.ok) throw new Error(translate('models.repoNotFound', { repo: repo }, 'Repo nao encontrado: ' + repo));
       return r.json();
     });
   }
