@@ -25,7 +25,7 @@ describe('index.html structure', () => {
     });
   }
 
-  const moduleScripts = ['src/models.js', 'src/brain.js', 'src/app.js', 'src/engine.js'];
+  const moduleScripts = ['src/i18n.js', 'src/models.js', 'src/brain.js', 'src/app.js', 'src/engine.js'];
 
   for (const src of moduleScripts) {
     it(`<script> includes ${src}`, () => {
@@ -61,7 +61,7 @@ describe('index.html structure', () => {
     assert.deepEqual(moduleSrcs, ['src/engine.js']);
     assert.deepEqual(
       plainSrcs.sort(),
-      ['src/app.js', 'src/brain.js', 'src/models.js'].sort(),
+      ['src/app.js', 'src/brain.js', 'src/i18n.js', 'src/models.js'].sort(),
       `expected src/models.js/src/brain.js/src/app.js as plain scripts; got: ${plainSrcs.join(', ')}`
     );
   });
@@ -105,7 +105,7 @@ describe('index.html structure', () => {
     let m;
     while ((m = fieldsetRe.exec(html)) !== null) {
       const block = m[1];
-      if (/<legend>\s*Desempenho\s*<\/legend>/i.test(block) && /id=["']perf["']/.test(block)) {
+      if (/<legend[^>]*>\s*Desempenho\s*<\/legend>/i.test(block) && /id=["']perf["']/.test(block)) {
         found = true;
         break;
       }
@@ -143,5 +143,18 @@ describe('index.html structure', () => {
       /margin:\s*0\s*auto/.test(html),
       'no margin: 0 auto (centered layout) found'
     );
+  });
+});
+
+
+describe('index.html i18n', () => {
+  it('includes a language selector with pt-BR and en-US', () => {
+    assert.match(html, /id=["']language-select["']/);
+    assert.match(html, /value=["']pt-BR["']/);
+    assert.match(html, /value=["']en-US["']/);
+  });
+
+  it('loads i18n.js before app.js', () => {
+    assert.ok(html.indexOf('src/i18n.js') < html.indexOf('src/app.js'));
   });
 });
