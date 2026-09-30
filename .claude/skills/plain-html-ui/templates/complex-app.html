@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Complex App - Plain HTML</title>
+</head>
+<body>
+
+<h1>Complex App</h1>
+<p>Built with only plain HTML elements. No CSS.</p>
+
+<form id="main-form" onsubmit="return false;">
+
+  <fieldset>
+    <legend>Model</legend>
+    <label for="model-select">Model:</label>
+    <select id="model-select">
+      <option value="qwen-3b">Qwen 2.5 3B</option>
+      <option value="qwen-7b">Qwen 2.5 7B</option>
+      <option value="llama-3.2">Llama 3.2 3B</option>
+      <option value="gemma-3">Gemma 3 4B</option>
+    </select>
+  </fieldset>
+
+  <fieldset>
+    <legend>Download model from HuggingFace</legend>
+    <label for="repo-input">Repo (main revision):</label>
+    <input id="repo-input" type="text" placeholder="author/model-GGUF">
+    <label for="file-input">File:</label>
+    <input id="file-input" type="text" placeholder="model-q4_k_m.gguf">
+    <br><br>
+    <div class="row">
+      <button type="button" id="list-btn">List files</button>
+      <button type="button" id="dl-btn">Download & cache</button>
+      <button type="button" id="cache-btn">View cache</button>
+      <button type="button" id="load-engine-btn">Load local model</button>
+      <button type="button" id="unload-btn">Unload</button>
+    </div>
+    <p id="dl-status"></p>
+    <progress id="dl-progress" max="100" value="0" style="display:none;width:100%"></progress>
+    <div id="file-list"></div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Input / Voice</legend>
+    <div class="row">
+      <label><input type="radio" name="mode" value="text" checked> Text</label>
+      <label><input type="radio" name="mode" value="voice"> Voice</label>
+    </div>
+    <div class="row">
+      <button type="button" id="mic-btn">🎤 Dictate</button>
+      <label><input type="checkbox" id="tts-chk"> Speak response (TTS)</label>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Performance</legend>
+    <div id="perf">No data. Send a message with a loaded model.</div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Chat</legend>
+    <div class="row">
+      <button type="button" id="clear-btn">Clear history</button>
+    </div>
+    <div id="messages"></div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Message</legend>
+    <label for="user-input">Type or dictate:</label>
+    <textarea id="user-input" rows="3" placeholder="Your message..."></textarea>
+    <br>
+    <button type="button" id="send-btn">Send</button>
+  </fieldset>
+
+</form>
+
+<fieldset>
+  <legend>Local Tools</legend>
+  <div id="tools-grid"></div>
+</fieldset>
+
+<details>
+  <summary>Debug & Logs</summary>
+  <fieldset>
+    <legend>Logs</legend>
+    <pre id="log-output">Waiting...</pre>
+    <div class="row">
+      <button type="button" id="export-log">Export</button>
+      <button type="button" id="clear-log">Clear</button>
+    </div>
+  </fieldset>
+</details>
+
+<dialog id="confirm-dlg">
+  <fieldset>
+    <legend>Confirm</legend>
+    <p id="confirm-msg">Are you sure?</p>
+    <div class="row">
+      <button type="button" id="confirm-ok">OK</button>
+      <button type="button" onclick="this.closest('dialog').close()">Cancel</button>
+    </div>
+  </fieldset>
+</dialog>
+
+</body>
+</html>

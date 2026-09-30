@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Dashboard - Plain HTML</title></head>
+<body>
+<h1>Dashboard</h1>
+<p>System overview - no CSS.</p>
+
+<form onsubmit="return false;">
+  <fieldset>
+    <legend>Filters</legend>
+    <label for="date-input">Date:</label>
+    <input id="date-input" type="date">
+    <label for="search-input">Search:</label>
+    <input id="search-input" type="text" placeholder="filter...">
+    <input id="search-suggest" list="suggest-list" type="text" placeholder="with autocomplete">
+    <datalist id="suggest-list">
+      <option value="error">
+      <option value="warning">
+      <option value="info">
+    </datalist>
+    <div class="row">
+      <button type="button" id="apply-btn">Apply</button>
+      <button type="button" id="reset-btn">Reset</button>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>KPIs</legend>
+    <table style="width:100%">
+      <tr><th>Metric</th><th>Value</th><th>Level</th></tr>
+      <tr><td>CPU</td><td>42%</td><td><meter value="0.42">42%</meter></td></tr>
+      <tr><td>Memory</td><td>78%</td><td><meter value="0.78">78%</meter></td></tr>
+      <tr><td>Disk</td><td>60%</td><td><meter value="0.6">60%</meter></td></tr>
+    </table>
+  </fieldset>
+
+  <fieldset>
+    <legend>Tasks</legend>
+    <div class="row">
+      <button type="button" id="new-task-btn">+ New Task</button>
+      <button type="button" id="refresh-tasks">Refresh</button>
+    </div>
+    <table style="width:100%">
+      <thead><tr><th>ID</th><th>Name</th><th>Status</th><th>Action</th></tr></thead>
+      <tbody id="tasks-body">
+        <tr><td>1</td><td>Build</td><td>Running</td><td><button type="button">Stop</button></td></tr>
+        <tr><td>2</td><td>Test</td><td>Done</td><td><button type="button">View</button></td></tr>
+      </tbody>
+    </table>
+    <p id="tasks-status"></p>
+    <progress id="tasks-progress" max="100" value="0" style="display:none;width:100%"></progress>
+  </fieldset>
+
+  <fieldset>
+    <legend>Console</legend>
+    <pre id="console-output">> system ready
+> waiting for input...</pre>
+    <label for="cmd-input">Command:</label>
+    <input id="cmd-input" type="text" placeholder="help">
+    <div class="row">
+      <button type="button" id="run-btn">Run</button>
+      <button type="button" id="clear-console-btn">Clear</button>
+    </div>
+  </fieldset>
+</form>
+
+<details>
+  <summary>Advanced Settings</summary>
+  <fieldset>
+    <legend>Settings</legend>
+    <label><input type="checkbox" id="auto-refresh-chk" checked> Auto-refresh</label>
+    <label for="interval-input">Interval (ms):</label>
+    <input id="interval-input" type="number" value="5000">
+    <label for="color-input">Theme color:</label>
+    <input id="color-input" type="color" value="#000000">
+  </fieldset>
+</details>
+
+</body>
+</html>
