@@ -210,6 +210,9 @@ unloadBtn.onclick = function() {
     window.HemorroidaEngine.unloadModel().then(function() {
       perfIsDefault = false;
       perfEl.textContent = t('app.unloaded');
+    }).catch(function(e) {
+      // sem catch, uma rejeicao de exit() ficaria como promise nao tratada
+      perfEl.textContent = t('download.error', { error: e.message });
     });
   }
 };
@@ -233,26 +236,47 @@ unloadBtn.onclick = function() {
 
   function setStatus(text) { statusEl.textContent = text; }
 
+  // Primeiro .gguf da listagem atual (fallback de arquivo: nunca pegar
+  // README/.gitattributes como "modelo").
+  function firstGgufFile() {
+    for (var i = 0; i < currentFiles.length; i++) {
+      if (/\.gguf$/i.test(currentFiles[i])) return currentFiles[i];
+    }
+    return '';
+  }
+
+  // Selecao atual: campos manuais digitados tem prioridade; o modelo conhecido
+  // do select e o fallback. Antes o select vencia sempre e, como todo <option>
+  // e um modelo conhecido, repo/file digitados eram SEMPRE ignorados (impossivel
+  // baixar um modelo custom so pela UI).
   function currentSelection() {
     var known = ModelManager.findKnown(modelSelect.value);
-    if (known) return { repo: known.repo, file: known.file };
-    return {
-      repo: repoInput.value.trim() || currentRepo,
-      file: fileInput.value.trim() || currentFiles[0] || ''
-    };
+    var typedRepo = repoInput.value.trim();
+    var repo = typedRepo || currentRepo || (known ? known.repo : '');
+    // firstGgufFile vem da listagem atual: so vale se o repo efetivo for o
+    // repo listado, senao um repo novo casaria com .gguf de listagem stale.
+    var listedFile = (currentRepo && repo === currentRepo) ? firstGgufFile() : '';
+    var file = fileInput.value.trim() || listedFile || (known ? known.file : '');
+    return { repo: repo, file: file };
+  }
+
+  function syncInputsFromSelect() {
+    var known = ModelManager.findKnown(modelSelect.value);
+    if (known) { repoInput.value = known.repo; fileInput.value = known.file; }
   }
 
   listBtn.onclick = function() {
     var repo = repoInput.value.trim();
     if (!repo) { var known = ModelManager.findKnown(modelSelect.value); if (known) repo = known.repo; }
     if (!repo) { setStatus(t('download.enterRepo')); return; }
-    fileListEl.innerHTML = '';
+    fileListEl.textContent = '';
     setStatus(t('download.listing', { repo: repo }));
     ModelManager.listFiles(repo).then(function(tree) {
       currentRepo = repo;
-      currentFiles = tree.map(function(t) { return t.path; });
+      currentFiles = tree.map(function(item) { return item.path; });
       const gguf = currentFiles.filter(function(f) { return /\.gguf$/i.test(f); });
-      fileListEl.innerHTML = 'GGUF:\n' + gguf.join('\n') + '\n\nTodos (' + tree.length + '):\n' + currentFiles.join('\n');
+      // textContent (nao innerHTML): nomes de arquivo vem de repo remoto.
+      fileListEl.textContent = 'GGUF:\n' + gguf.join('\n') + '\n\nTodos (' + tree.length + '):\n' + currentFiles.join('\n');
       setStatus(t('download.files', { count: currentFiles.length, gguf: gguf.length }));
     }).catch(function(e) { setStatus(t('download.error', { error: e.message })); });
   };
@@ -270,25 +294,33 @@ unloadBtn.onclick = function() {
       progressEl.value = 100;
       setStatus(t('download.complete', { size: ModelManager.formatBytes(blob.size) }));
       addMessage(t('download.cached', { file: sel.file, size: ModelManager.formatBytes(blob.size) }), 'bot');
-    }).catch(function(e) { setStatus(t('download.error', { error: e.message })); });
+    }).catch(function(e) {
+      progressEl.style.display = 'none';
+      setStatus(t('download.error', { error: e.message }));
+    });
   };
 
   cacheBtn.onclick = function() {
+    if (!('caches' in window)) { setStatus(t('models.cacheUnsupported')); return; }
     caches.keys().then(function(keys) {
       if (!keys.length) { setStatus(t('download.cacheEmpty')); return; }
-      Promise.all(keys.map(function(name) {
+      return Promise.all(keys.map(function(name) {
         return caches.open(name).then(function(c) {
           return c.keys().then(function(reqs) { return t('download.cacheFiles', { name: name, count: reqs.length }); });
         });
       })).then(function(lines) { setStatus(t('download.cacheList', { items: lines.join('\n') })); });
-    });
+    }).catch(function(e) { setStatus(t('download.error', { error: e.message })); });
   };
 
   if (loadEngineBtn) {
+    // Timeout p/ esperar o modulo da engine WASM: sem ele, falha de carga do
+    // modulo deixa o botao girando pra sempre sem feedback.
+    var ENGINE_WAIT_MS = 30000;
     loadEngineBtn.onclick = function() {
       var sel = currentSelection();
       if (!sel.repo || !sel.file) { setStatus(t('download.select')); return; }
       setStatus(t('download.loading'));
+      var waited = 0;
       var waitForEngine = function() {
         if (window.HemorroidaEngine) {
           window.HemorroidaEngine.loadModelFromCache(sel.repo, sel.file, 'main')
@@ -297,18 +329,18 @@ unloadBtn.onclick = function() {
               addMessage(t('download.engineReady', { file: info.file }), 'bot');
             })
             .catch(function(e) { setStatus(t('download.error', { error: e.message })); });
-        } else {
-          setTimeout(waitForEngine, 100);
+          return;
         }
+        waited += 100;
+        if (waited >= ENGINE_WAIT_MS) { setStatus(t('download.engineTimeout')); return; }
+        setTimeout(waitForEngine, 100);
       };
       waitForEngine();
     };
   }
 
-  modelSelect.addEventListener('change', function() {
-    var known = ModelManager.findKnown(modelSelect.value);
-    if (known) { repoInput.value = known.repo; fileInput.value = known.file; }
-  });
+  modelSelect.addEventListener('change', syncInputsFromSelect);
+  syncInputsFromSelect(); // preenche repo/file do modelo selecionado no boot
 })();
 
 // ============ Render tools ============
