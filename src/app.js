@@ -251,8 +251,12 @@ unloadBtn.onclick = function() {
   // baixar um modelo custom so pela UI).
   function currentSelection() {
     var known = ModelManager.findKnown(modelSelect.value);
-    var repo = repoInput.value.trim() || currentRepo || (known ? known.repo : '');
-    var file = fileInput.value.trim() || firstGgufFile() || (known ? known.file : '');
+    var typedRepo = repoInput.value.trim();
+    var repo = typedRepo || currentRepo || (known ? known.repo : '');
+    // firstGgufFile vem da listagem atual: so vale se o repo efetivo for o
+    // repo listado, senao um repo novo casaria com .gguf de listagem stale.
+    var listedFile = (currentRepo && repo === currentRepo) ? firstGgufFile() : '';
+    var file = fileInput.value.trim() || listedFile || (known ? known.file : '');
     return { repo: repo, file: file };
   }
 

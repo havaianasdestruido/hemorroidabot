@@ -66,8 +66,9 @@ var ModelManager = (function() {
     }).then(function(blob) {
       return openCache().then(function(cache) {
         var headers = { 'Content-Type': 'application/octet-stream' };
-        // Guarda o tamanho p/ repoCachedSize nao precisar ler o corpo inteiro.
-        if (contentLength > 0) headers['Content-Length'] = String(contentLength);
+        // Tamanho real do blob armazenado (mesmo sem Content-Length de rede):
+        // repoCachedSize usa o header p/ nao materializar o corpo inteiro.
+        headers['Content-Length'] = String(blob.size);
         var resp = new Response(blob, { headers: headers });
         return cache.put(url, resp).then(function() {
           return blob;

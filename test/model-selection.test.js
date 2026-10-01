@@ -98,6 +98,37 @@ test('campos vazios caem no modelo conhecido do select', () => {
   });
 });
 
+test('repo digitado diferente do listing stale NAO usa o .gguf antigo', () => {
+  // Regressao: firstGgufFile() vinha do repo listado anteriormente; pares
+  // repo-novo + arquivo-antigo terminavam em 404.
+  const sel = runCurrentSelection({
+    repoInput: { value: 'org/novo-repo' },
+    fileInput: { value: '' },
+    currentRepo: 'org/repo-velho',
+    currentFiles: ['modelo-antigo.gguf', 'README.md'],
+    modelSelect: { value: 'qwen-3b' }
+  });
+  assert.deepStrictEqual(sel, {
+    repo: 'org/novo-repo',
+    // fallback do select conhecido, NUNCA o .gguf da listagem stale
+    file: 'qwen2.5-3b-instruct-q4_k_m.gguf'
+  });
+});
+
+test('repo digitado igual ao repo listado ainda usa o .gguf da listagem', () => {
+  const sel = runCurrentSelection({
+    repoInput: { value: 'org/listado' },
+    fileInput: { value: '' },
+    currentRepo: 'org/listado',
+    currentFiles: ['README.md', 'sub/model-q4.gguf'],
+    modelSelect: { value: 'qwen-3b' }
+  });
+  assert.deepStrictEqual(sel, {
+    repo: 'org/listado',
+    file: 'sub/model-q4.gguf'
+  });
+});
+
 test('fallback de arquivo prefere .gguf da listagem (nao README/.gitattributes)', () => {
   const sel = runCurrentSelection({
     repoInput: { value: '' },

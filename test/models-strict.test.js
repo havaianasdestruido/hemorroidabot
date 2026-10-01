@@ -288,7 +288,21 @@ test('download: guarda Content-Length no header do response em cache', async () 
   assert.strictEqual(stored.headers.get('Content-Length'), '6');
 });
 
-test('download: sem Content-Length nao grava header invalido', async () => {
+test('download: Content-Length em cache e sempre o blob.size (nao o de rede)', async () => {
+  // Header de rede exagerado/errado nao pode entrar no cache: o que vale e o
+  // tamanho real do blob armazenado.
+  mockFetch(CTX, () => Promise.resolve({
+    ok: true, status: 200,
+    headers: { get: (k) => (k === 'Content-Length' ? '999' : null) },
+    body: readerStream([new Uint8Array([1, 2, 3])])
+  }));
+  const blob = await MM.download('org/repo', 'cl-enviado.gguf', 'main');
+  assert.strictEqual(blob.size, 3);
+  const stored = store.caches._map.get(MM.fileURL('org/repo', 'cl-enviado.gguf', 'main'));
+  assert.strictEqual(stored.headers.get('Content-Length'), '3');
+});
+
+test('download: sem Content-Length de rede o header de cache sai populado', async () => {
   mockFetch(CTX, () => Promise.resolve({
     ok: true, status: 200,
     headers: { get: () => null },
@@ -298,7 +312,9 @@ test('download: sem Content-Length nao grava header invalido', async () => {
   assert.strictEqual(blob.size, 1);
   const stored = store.caches._map.get(MM.fileURL('org/repo', 'sem-cl.gguf', 'main'));
   assert.ok(stored, 'gravou no cache');
-  assert.strictEqual(stored.headers.get('Content-Length'), null);
+  // blob.size mesmo sem header de rede (repoCachedSize nao precisa do corpo)
+  assert.strictEqual(stored.headers.get('Content-Length'), '1');
+  assert.strictEqual(await MM.repoCachedSize('org/repo', ['sem-cl.gguf'], 'main'), 1);
 });
 
 test('repoCachedSize: prefere header Content-Length sem ler o corpo', async () => {

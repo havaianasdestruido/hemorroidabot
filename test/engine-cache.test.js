@@ -113,3 +113,49 @@ test('getCachedBlob rejeita com aviso claro quando nao esta em cache', async () 
 test('unloadModel sem instancia carregada resolve sem lancar', async () => {
   await assert.doesNotReject(() => Engine.unloadModel());
 });
+
+// ---- Coordenacao carga x descarga (generation + loadChain) ----
+
+test('carga pedida antes da descarga rejeita como obsoleta (sem init)', async () => {
+  // A generation e capturada no momento do pedido; a descarga a invalida.
+  // O stale check roda ANTES do initWasm (que tentaria importar o wllama).
+  const loadP = Engine.loadModelFromCache('org/repo', 'a.gguf', 'main');
+  const unloadP = Engine.unloadModel();
+  await assert.rejects(loadP, /Carga cancelada/);
+  await assert.doesNotReject(() => unloadP);
+});
+
+test('descarga espera a carga existente antes de concluir', async () => {
+  // unloadModel encadeia no loadChain: a carga precisa SETTLE antes de a
+  // descarga concluir (aqui a carga rejeita rapido, sem chegar na init).
+  const events = [];
+  const loadP = Engine.loadModelFromCache('org/repo', 'b.gguf', 'main')
+    .catch(function(e) { events.push('load'); throw e; });
+  const unloadP = Engine.unloadModel().then(function() { events.push('unload'); });
+  await assert.rejects(loadP);
+  await assert.doesNotReject(() => unloadP);
+  assert.deepStrictEqual(events, ['load', 'unload'], 'descarga so conclui depois da carga');
+  assert.strictEqual(Engine.isModelLoaded(), false, 'estado limpo apos a descarga');
+});
+
+test('carga pedida depois da descarga nao e obsoleta (entra na fila)', async () => {
+  await assert.doesNotReject(() => Engine.unloadModel());
+  let err = null;
+  try {
+    await Engine.loadModelFromCache('org/repo', 'c.gguf', 'main');
+  } catch (e) { err = e; }
+  assert.ok(err, 'carga deve chegar na init (que falha na importacao neste ambiente)');
+  assert.ok(!/Carga cancelada/.test(err.message), 'nao deve rejeitar como obsoleta: ' + err.message);
+});
+
+test('coalescing de carga considera a generation (mesmo modelo pos-descarga)', async () => {
+  const p1 = Engine.loadModelFromCache('org/repo', 'd.gguf', 'main');
+  const p2 = Engine.loadModelFromCache('org/repo', 'd.gguf', 'main');
+  assert.strictEqual(p1, p2, 'mesma generation + mesmo modelo = mesma promise');
+  const unloadP = Engine.unloadModel();
+  const p3 = Engine.loadModelFromCache('org/repo', 'd.gguf', 'main');
+  assert.notStrictEqual(p3, p1, 'generation nova nao reusa a promise obsoleta');
+  await assert.rejects(p1, /Carga cancelada/);
+  await assert.rejects(p3); // roda apos a descarga e falha na init (ambiente)
+  await assert.doesNotReject(() => unloadP);
+});

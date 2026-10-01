@@ -11,9 +11,10 @@ const translate = function(key, vars, fallback) { return typeof I18n !== 'undefi
 let WllamaModule = null;
 let instance = null;
 let currentSource = null; // { repo, file }
+let generation = 0;       // invalidado por unloadModel: pedidos antigos ficam obsoletos
 let initPromise = null;   // evita instancias WASM duplicadas em init concorrente
-let loadInFlight = null;  // { key, promise } - cargas simultaneas do mesmo modelo
-let loadChain = Promise.resolve(); // serializa cargas de modelos diferentes
+let loadInFlight = null;  // { key, generation, promise } - cargas simultaneas
+let loadChain = Promise.resolve(); // fila: cargas e descargas em ordem de chegada
 
 async function getWllamaClass() {
   if (WllamaModule) return WllamaModule.Wllama;
@@ -26,6 +27,11 @@ function ensureEngine() {
     throw new Error(translate('engine.notInitialized', null, 'Engine nao inicializado. Carregue um modelo primeiro.'));
   }
   return instance;
+}
+
+// Pedido obsoleto (descarga aconteceu depois da captura da generation).
+function staleLoadError() {
+  return new Error(translate('engine.staleLoad', null, 'Carga cancelada: o modelo foi descarregado.'));
 }
 
 // Mesmo nome de cache do ModelManager (fonte unica; fallback p/ uso isolado).
@@ -60,12 +66,17 @@ function getCachedBlob(repo, file, revision) {
 }
 
 // Inicializa a engine WASM (carrega o runtime llama.cpp).
-async function initWasm() {
+// gen = generation capturada pelo chamador: trabalho obsoleto (descarga no
+// meio) rejeita antes de atribuir instance.
+async function initWasm(gen) {
   if (instance) return;
+  const initGen = (gen === undefined) ? generation : gen;
   if (!initPromise) {
-    initPromise = (async function() {
+    let initP = null;
+    initP = (async function() {
       const Wllama = await getWllamaClass();
       if (instance) return;
+      if (initGen !== generation) throw staleLoadError();
 
       const paths = {
         default: WLLAMA_WASM_DEFAULT
@@ -90,40 +101,53 @@ async function initWasm() {
         console.warn('Compat mode indisponivel, usando build padrao.', e);
       }
     })().catch(function(e) {
-      initPromise = null; // permite tentar de novo apos falha
+      if (initPromise === initP) initPromise = null; // permite tentar de novo apos falha
       throw e;
     });
+    initPromise = initP;
   }
   return initPromise;
 }
 
-async function doLoadModelFromCache(repo, file, revision) {
-  await initWasm();
+async function doLoadModelFromCache(repo, file, revision, gen) {
+  await initWasm(gen);
+  if (gen !== generation) throw staleLoadError(); // nao comeca a carregar obsoleto
   const engine = ensureEngine();
   const blob = await getCachedBlob(repo, file, revision);
+  if (gen !== generation) throw staleLoadError(); // rejeita antes do loadModel
   await engine.loadModel([blob], {
     n_ctx: 2048,
     n_threads: 4,
     pooling_type: 'none'
   });
-  currentSource = { repo: repo, file: file };
+  // descarga no meio da carga: nao publica currentSource (a descarga limpa)
+  if (gen === generation) currentSource = { repo: repo, file: file };
   return { repo: repo, file: file };
 }
 
 // Carrega um modelo .gguf do cache do navegador.
-// Cargas simultaneas: do mesmo modelo reusam a promise em voo (duplo clique);
-// de modelos diferentes entram em fila p/ nao chamar loadModel 2x na instancia.
+// - generation capturada no momento do pedido e levada p/ a fila: pedidos
+//   anteriores a uma descarga rejeitam antes de init/load (nao ressuscitam
+//   a engine);
+// - mesmo modelo em voo reusa a promise (duplo clique); modelos diferentes
+//   entram em fila; cargas pedidas durante uma descarga esperam ela terminar.
 function loadModelFromCache(repo, file, revision) {
   const key = String(repo) + '@' + String(revision || 'main') + '/' + String(file);
-  if (loadInFlight && loadInFlight.key === key) return loadInFlight.promise;
+  const gen = generation;
+  if (loadInFlight && loadInFlight.key === key && loadInFlight.generation === gen) {
+    return loadInFlight.promise;
+  }
   const promise = loadChain
-    .catch(function() { /* erro da carga anterior nao bloqueia a proxima */ })
-    .then(function() { return doLoadModelFromCache(repo, file, revision); })
+    .catch(function() { /* erro anterior nao bloqueia a proxima carga */ })
+    .then(function() {
+      if (gen !== generation) return Promise.reject(staleLoadError());
+      return doLoadModelFromCache(repo, file, revision, gen);
+    })
     .finally(function() {
       if (loadInFlight && loadInFlight.promise === promise) loadInFlight = null;
     });
   loadChain = promise.catch(function() {});
-  loadInFlight = { key: key, promise: promise };
+  loadInFlight = { key: key, generation: gen, promise: promise };
   return promise;
 }
 
@@ -207,21 +231,28 @@ function isModelLoaded() {
 }
 
 // Descarrega e libera memoria.
-// Sempre reseta o estado (mesmo com init falho/sem modelo carregado) e trata
-// exit() como melhor-esforco: uma falha nao pode deixar a UI presa num estado
-// meio-descarregado com promise rejeitada sem tratamento.
-async function unloadModel() {
-  const inst = instance;
-  instance = null;
-  initPromise = null;
-  loadInFlight = null;
-  currentSource = null;
-  if (!inst) return;
-  try {
-    await inst.exit();
-  } catch (e) {
-    console.warn('unloadModel: exit() falhou (memoria pode nao ter liberado):', e);
-  }
+// Coordenado com as cargas via loadChain + generation:
+// - espera init e cargas existentes terminarem antes de chamar exit();
+// - pedidos de carga feitos ANTES desta descarga ficam obsoletos e rejeitam
+//   antes de init/load (nao recriam instancia nem publicam currentSource);
+// - pedidos feitos DEPOIS esperam esta descarga terminarem (entram na fila).
+function unloadModel() {
+  generation += 1;
+  const prev = loadChain;
+  const work = prev.catch(function() { /* erro anterior nao bloqueia a descarga */ }).then(async function() {
+    const inst = instance;
+    instance = null;
+    initPromise = null;
+    currentSource = null;
+    if (!inst) return;
+    try {
+      await inst.exit();
+    } catch (e) {
+      console.warn('unloadModel: exit() falhou (memoria pode nao ter liberado):', e);
+    }
+  });
+  loadChain = work.catch(function() {});
+  return work;
 }
 
 export {
