@@ -30,7 +30,8 @@ var ModelManager = (function() {
 
   // Verifica se uma URL ja esta em cache (nao precisa baixar de novo).
   function isCached(url) {
-    return openCache().then(function(cache) {
+    // Promise em volta do openCache: sem Cache API rejeita (nao lanca sync).
+    return Promise.resolve().then(openCache).then(function(cache) {
       return cache.match(url).then(function(resp) {
         return !!resp;
       });
@@ -39,11 +40,12 @@ var ModelManager = (function() {
 
   // Baixa um arquivo e guarda no cache. Retorna blob com progresso via callback.
   function downloadFile(url, onProgress) {
+    var contentLength = 0;
     return fetch(url, { mode: 'cors' }).then(function(response) {
       if (!response.ok) {
         throw new Error(translate('models.downloadFailed', { status: response.status }, 'Falha no download: HTTP ' + response.status));
       }
-      var contentLength = +response.headers.get('Content-Length') || 0;
+      contentLength = +response.headers.get('Content-Length') || 0;
       var reader = response.body.getReader();
       var received = 0;
       var chunks = [];
@@ -63,9 +65,10 @@ var ModelManager = (function() {
       return pump();
     }).then(function(blob) {
       return openCache().then(function(cache) {
-        var resp = new Response(blob, {
-          headers: { 'Content-Type': 'application/octet-stream' }
-        });
+        var headers = { 'Content-Type': 'application/octet-stream' };
+        // Guarda o tamanho p/ repoCachedSize nao precisar ler o corpo inteiro.
+        if (contentLength > 0) headers['Content-Length'] = String(contentLength);
+        var resp = new Response(blob, { headers: headers });
         return cache.put(url, resp).then(function() {
           return blob;
         });
@@ -74,15 +77,15 @@ var ModelManager = (function() {
   }
 
   // Baixa um arquivo do repo (usa cache se ja existir).
+  // Uma unica leitura do cache: evita corrida (entrada sumir entre a checagem
+  // e a leitura, gerando resp undefined) e reabrir o cache sem necessidade.
   function download(repo, file, revision, onProgress) {
     var url = fileURL(repo, file, revision);
-    return isCached(url).then(function(cached) {
-      if (cached) {
-        return openCache().then(function(cache) {
-          return cache.match(url).then(function(resp) { return resp.blob(); });
-        });
-      }
-      return downloadFile(url, onProgress);
+    return Promise.resolve().then(openCache).then(function(cache) {
+      return cache.match(url).then(function(resp) {
+        if (resp) return resp.blob();
+        return downloadFile(url, onProgress);
+      });
     });
   }
 
@@ -96,19 +99,32 @@ var ModelManager = (function() {
     });
   }
 
+  // Tamanho de uma resposta cacheada: prefere o header Content-Length (guardado
+  // no download) p/ nao materializar blobs de gigabytes so p/ medir.
+  function cachedResponseSize(resp) {
+    if (!resp) return Promise.resolve(0);
+    if (resp.headers && typeof resp.headers.get === 'function') {
+      var raw = resp.headers.get('Content-Length');
+      if (raw !== null && raw !== undefined && raw !== '') {
+        var cl = +raw;
+        if (isFinite(cl) && cl >= 0) return Promise.resolve(cl);
+      }
+    }
+    return resp.arrayBuffer().then(function(buf) { return buf.byteLength; });
+  }
+
   // Retorna o tamanho em cache de um repo (soma dos blobs).
   function repoCachedSize(repo, files, revision) {
     var urls = files.map(function(f) {
       return fileURL(repo, f, revision);
     });
-    return openCache().then(function(cache) {
+    return Promise.resolve().then(openCache).then(function(cache) {
       return Promise.all(urls.map(function(u) { return cache.match(u); }))
         .then(function(resps) {
-          return Promise.all(resps.map(function(r) {
-            return r ? r.arrayBuffer() : Promise.resolve(new ArrayBuffer(0));
-          })).then(function(bufs) {
-            return bufs.reduce(function(a, b) { return a + b.byteLength; }, 0);
-          });
+          return Promise.all(resps.map(cachedResponseSize))
+            .then(function(sizes) {
+              return sizes.reduce(function(a, b) { return a + b; }, 0);
+            });
         });
     });
   }
@@ -130,6 +146,7 @@ var ModelManager = (function() {
 
   return {
     knownModels: KNOWN_MODELS,
+    cacheName: CACHE_NAME,
     findKnown: findKnown,
     formatBytes: formatBytes,
     fileURL: fileURL,

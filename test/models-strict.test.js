@@ -252,3 +252,99 @@ test('download: cacheado nao chama fetch e isCached true', async () => {
   assert.strictEqual(calls, 0, 'fetch nao chamado');
   assert.strictEqual(await MM.isCached(url), true);
 });
+// ---- Regressoes de cache (download / repoCachedSize) ----
+
+test('download: cache hit abre o cache e da match uma unica vez (sem corrida)', async () => {
+  // Antes: isCached() abria o cache + match, e o caminho cacheado abria de
+  // novo + match; se a entrada sumisse nesse intervalo, resp era undefined e
+  // resp.blob() lancava TypeError. Agora: uma unica leitura.
+  const url = MM.fileURL('org/repo', 'cached-once.gguf', 'main');
+  store.caches._map.set(url, { blob: () => Promise.resolve(new Blob(['x'])) });
+
+  let openCalls = 0;
+  let matchCalls = 0;
+  const origOpen = store.caches.open;
+  store.caches.open = function() { openCalls++; return origOpen(); };
+  const origMatch = store.cache.match;
+  store.cache.match = function(u) { matchCalls++; return origMatch(u); };
+
+  mockFetch(CTX, () => { throw new Error('fetch nao deve ser chamado'); });
+  const blob = await MM.download('org/repo', 'cached-once.gguf', 'main');
+  assert.strictEqual(blob.size, 1);
+  assert.strictEqual(openCalls, 1, 'open uma vez');
+  assert.strictEqual(matchCalls, 1, 'match uma vez');
+});
+
+test('download: guarda Content-Length no header do response em cache', async () => {
+  mockFetch(CTX, () => Promise.resolve({
+    ok: true, status: 200,
+    headers: { get: (k) => (k === 'Content-Length' ? '6' : null) },
+    body: readerStream([new Uint8Array([1, 2, 3]), new Uint8Array([4, 5, 6])])
+  }));
+  const blob = await MM.download('org/repo', 'com-cl.gguf', 'main');
+  assert.strictEqual(blob.size, 6);
+  const stored = store.caches._map.get(MM.fileURL('org/repo', 'com-cl.gguf', 'main'));
+  assert.ok(stored, 'gravou no cache');
+  assert.strictEqual(stored.headers.get('Content-Length'), '6');
+});
+
+test('download: sem Content-Length nao grava header invalido', async () => {
+  mockFetch(CTX, () => Promise.resolve({
+    ok: true, status: 200,
+    headers: { get: () => null },
+    body: readerStream([new Uint8Array([9])])
+  }));
+  const blob = await MM.download('org/repo', 'sem-cl.gguf', 'main');
+  assert.strictEqual(blob.size, 1);
+  const stored = store.caches._map.get(MM.fileURL('org/repo', 'sem-cl.gguf', 'main'));
+  assert.ok(stored, 'gravou no cache');
+  assert.strictEqual(stored.headers.get('Content-Length'), null);
+});
+
+test('repoCachedSize: prefere header Content-Length sem ler o corpo', async () => {
+  let bodyReads = 0;
+  store.caches._map.set(MM.fileURL('org/repo', 'grande.gguf', 'main'), {
+    headers: { get: (h) => (h === 'Content-Length' ? '4096' : null) },
+    arrayBuffer: () => { bodyReads++; return Promise.resolve(new ArrayBuffer(8)); }
+  });
+  const size = await MM.repoCachedSize('org/repo', ['grande.gguf'], 'main');
+  assert.strictEqual(size, 4096);
+  assert.strictEqual(bodyReads, 0, 'nao deve materializar o blob p/ medir');
+});
+
+test('repoCachedSize: header invalido ou ausente cai para arrayBuffer', async () => {
+  store.caches._map.set(MM.fileURL('org/repo', 'antigo.gguf', 'main'), {
+    headers: { get: () => null },
+    arrayBuffer: () => Promise.resolve(new ArrayBuffer(7))
+  });
+  store.caches._map.set(MM.fileURL('org/repo', 'sem-headers.gguf', 'main'), {
+    arrayBuffer: () => Promise.resolve(new ArrayBuffer(3))
+  });
+  store.caches._map.set(MM.fileURL('org/repo', 'header-lixo.gguf', 'main'), {
+    headers: { get: () => 'nao-e-numero' },
+    arrayBuffer: () => Promise.resolve(new ArrayBuffer(5))
+  });
+  const size = await MM.repoCachedSize(
+    'org/repo', ['antigo.gguf', 'sem-headers.gguf', 'header-lixo.gguf'], 'main'
+  );
+  assert.strictEqual(size, 15);
+});
+
+test('download/isCached sem Cache API rejeitam como promise (nao lancam sync)', async () => {
+  const loader = loadScriptFile('./models.js', {
+    session: 'nocache-' + Math.random().toString(36).slice(2),
+    globals: { window: {}, caches: undefined },
+    exposes: ['ModelManager']
+  });
+  const MMn = loader.exposed.ModelManager;
+
+  let pDl;
+  assert.doesNotThrow(() => { pDl = MMn.download('org/repo', 'x.gguf', 'main'); },
+    'download deve retornar promise, nao lancar synchrono');
+  await assert.rejects(() => pDl, /Cache API nao suportada/);
+
+  let pCached;
+  assert.doesNotThrow(() => { pCached = MMn.isCached('https://huggingface.co/org/repo/resolve/main/x.gguf'); },
+    'isCached deve retornar promise, nao lancar synchrono');
+  await assert.rejects(() => pCached, /Cache API nao suportada/);
+});

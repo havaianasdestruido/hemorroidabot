@@ -11,6 +11,9 @@ const translate = function(key, vars, fallback) { return typeof I18n !== 'undefi
 let WllamaModule = null;
 let instance = null;
 let currentSource = null; // { repo, file }
+let initPromise = null;   // evita instancias WASM duplicadas em init concorrente
+let loadInFlight = null;  // { key, promise } - cargas simultaneas do mesmo modelo
+let loadChain = Promise.resolve(); // serializa cargas de modelos diferentes
 
 async function getWllamaClass() {
   if (WllamaModule) return WllamaModule.Wllama;
@@ -25,11 +28,30 @@ function ensureEngine() {
   return instance;
 }
 
+// Mesmo nome de cache do ModelManager (fonte unica; fallback p/ uso isolado).
+function modelsCacheName() {
+  if (typeof ModelManager !== 'undefined' && ModelManager && ModelManager.cacheName) {
+    return ModelManager.cacheName;
+  }
+  return CACHE_NAME_DEFAULTS;
+}
+
+// Mesma URL de cache do ModelManager (normaliza trailing slash do repo).
+// Sem isso, um repo digitado com "/" final e baixo por um URL e lido por outro
+// ("org/repo/" vs "org/repo") e o modelo nunca aparece como cacheado.
+function modelFileURL(repo, file, revision) {
+  if (typeof ModelManager !== 'undefined' && ModelManager && typeof ModelManager.fileURL === 'function') {
+    return ModelManager.fileURL(repo, file, revision);
+  }
+  var rev = revision || 'main';
+  var base = String(repo).replace(/\/+$/, '');
+  return 'https://huggingface.co/' + base + '/resolve/' + rev + '/' + file;
+}
+
 // Obtem blob do Cache Storage (baixado via models.js)
 function getCachedBlob(repo, file, revision) {
-  revision = revision || 'main';
-  const url = 'https://huggingface.co/' + repo + '/resolve/' + revision + '/' + file;
-  return caches.open(CACHE_NAME_DEFAULTS).then(function(cache) {
+  const url = modelFileURL(repo, file, revision);
+  return caches.open(modelsCacheName()).then(function(cache) {
     return cache.match(url).then(function(resp) {
       if (!resp) throw new Error(translate('engine.notCached', null, 'Modelo nao esta em cache. Baixe primeiro.'));
       return resp.blob();
@@ -39,35 +61,43 @@ function getCachedBlob(repo, file, revision) {
 
 // Inicializa a engine WASM (carrega o runtime llama.cpp).
 async function initWasm() {
-  const Wllama = await getWllamaClass();
   if (instance) return;
+  if (!initPromise) {
+    initPromise = (async function() {
+      const Wllama = await getWllamaClass();
+      if (instance) return;
 
-  const paths = {
-    default: WLLAMA_WASM_DEFAULT
-  };
-  instance = new Wllama(paths, {
-    allowOffline: true,
-    logger: {
-      debug: function() {},
-      log: function() {},
-      warn: function() {},
-      error: function() {}
-    }
-  });
+      const paths = {
+        default: WLLAMA_WASM_DEFAULT
+      };
+      instance = new Wllama(paths, {
+        allowOffline: true,
+        logger: {
+          debug: function() {},
+          log: function() {},
+          warn: function() {},
+          error: function() {}
+        }
+      });
 
-  // Usa recursos compat locais (necessario em Chrome/Safari).
-  try {
-    instance.setCompat({
-      worker: WLLAMA_COMPAT_JS,
-      wasm: WLLAMA_COMPAT_WASM
+      // Usa recursos compat locais (necessario em Chrome/Safari).
+      try {
+        instance.setCompat({
+          worker: WLLAMA_COMPAT_JS,
+          wasm: WLLAMA_COMPAT_WASM
+        });
+      } catch (e) {
+        console.warn('Compat mode indisponivel, usando build padrao.', e);
+      }
+    })().catch(function(e) {
+      initPromise = null; // permite tentar de novo apos falha
+      throw e;
     });
-  } catch (e) {
-    console.warn('Compat mode indisponivel, usando build padrao.', e);
   }
+  return initPromise;
 }
 
-// Carrega um modelo .gguf do cache do navegador.
-async function loadModelFromCache(repo, file, revision) {
+async function doLoadModelFromCache(repo, file, revision) {
   await initWasm();
   const engine = ensureEngine();
   const blob = await getCachedBlob(repo, file, revision);
@@ -78,6 +108,23 @@ async function loadModelFromCache(repo, file, revision) {
   });
   currentSource = { repo: repo, file: file };
   return { repo: repo, file: file };
+}
+
+// Carrega um modelo .gguf do cache do navegador.
+// Cargas simultaneas: do mesmo modelo reusam a promise em voo (duplo clique);
+// de modelos diferentes entram em fila p/ nao chamar loadModel 2x na instancia.
+function loadModelFromCache(repo, file, revision) {
+  const key = String(repo) + '@' + String(revision || 'main') + '/' + String(file);
+  if (loadInFlight && loadInFlight.key === key) return loadInFlight.promise;
+  const promise = loadChain
+    .catch(function() { /* erro da carga anterior nao bloqueia a proxima */ })
+    .then(function() { return doLoadModelFromCache(repo, file, revision); })
+    .finally(function() {
+      if (loadInFlight && loadInFlight.promise === promise) loadInFlight = null;
+    });
+  loadChain = promise.catch(function() {});
+  loadInFlight = { key: key, promise: promise };
+  return promise;
 }
 
 // Gera texto. Retorna Promise<string>. onToken recebe fragmento incremental.
@@ -160,11 +207,20 @@ function isModelLoaded() {
 }
 
 // Descarrega e libera memoria.
+// Sempre reseta o estado (mesmo com init falho/sem modelo carregado) e trata
+// exit() como melhor-esforco: uma falha nao pode deixar a UI presa num estado
+// meio-descarregado com promise rejeitada sem tratamento.
 async function unloadModel() {
-  if (instance && instance.isModelLoaded()) {
-    await instance.exit();
-    instance = null;
-    currentSource = null;
+  const inst = instance;
+  instance = null;
+  initPromise = null;
+  loadInFlight = null;
+  currentSource = null;
+  if (!inst) return;
+  try {
+    await inst.exit();
+  } catch (e) {
+    console.warn('unloadModel: exit() falhou (memoria pode nao ter liberado):', e);
   }
 }
 

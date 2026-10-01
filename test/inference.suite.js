@@ -112,13 +112,11 @@ async function main() {
     catch (e) {}
     console.log(`[passo3] SharedArrayBuffer disponivel: ${hasSAB}`);
 
-    // Escrever repo/arquivo na UI (o SmolLM nao esta no select, usa campos manuais)
-    await page.fill('#repo-input', REPO);
-    await page.fill('#file-input', Q4_FILE);
-    // IMPORTANTE: o select padrao ("qwen-3b") e um modelo conhecido; currentSelection()
-    // retornaria o Qwen 3B em vez dos campos manuais. Forca um valor nao-conhecido
-    // para que o app use repo/file que digitamos.
-    await page.evaluate(() => { document.getElementById('model-select').value = 'smol-135m'; });
+  // Escrever repo/arquivo na UI (o SmolLM nao esta no select, usa campos manuais)
+  await page.fill('#repo-input', REPO);
+  await page.fill('#file-input', Q4_FILE);
+  // currentSelection() agora da prioridade aos campos manuais sobre o select
+  // (antes o modelo conhecido vencia e este hack de select era necessario).
 
     // 4) Lista arquivos (opcional, confirma repo valido)
     console.log('[passo4] Listar arquivos (confirmar repo)...');
