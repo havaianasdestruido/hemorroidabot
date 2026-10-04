@@ -88,6 +88,7 @@ node --check <file>    # syntax check (usado pelo CI em src/app.js, brain.js, mo
 - **Nomes:** camelCase para JS (`loadModelFromCache`, `getDeadTools`); arquivos em lowercase (ex: `json-formatter.js`); classes em PascalCase (`ModelManager`).
 - **DOM/UI:** tudo via `document.getElementById` com ids `-` (ex: `model-select`, `user-input`, `messages`).
 - **Vendor:** `vendor/wllama*` sao binarios WASM + lib versionada. **Nao modificar**; referencie via caminho relativo ao JS (ex: `WLLAMA_JS_URL`).
+- **Paths de recursos do wllama em `engine.js`:** resolva SEMPRE com `new URL(caminho, import.meta.url)` (absoluta, relativa ao modulo). O wllama resolve paths crus contra `document.baseURI` (a PAGINA); no deploy do Pages (subpath `/hemorroidabot/`) um `../vendor/...` cru pediria `<origem>/vendor/...` fora do site (404 em HTML -> "expected magic word" no WASM). Regressao coberta por `test/engine-paths.test.js`.
 
 ## 6. Regras de dependencias
 

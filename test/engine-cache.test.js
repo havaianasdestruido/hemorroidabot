@@ -54,6 +54,7 @@ before(async () => {
 test('modulo expoe window.HemorroidaEngine com a superficie esperada', () => {
   const surface = Object.keys(window.HemorroidaEngine).sort();
   assert.deepStrictEqual(surface, [
+    'ENGINE_ASSETS', // recursos wllama resolvidos (test/engine-paths.test.js)
     'chat',
     'generate',
     'getCachedBlob',
