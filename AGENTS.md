@@ -21,7 +21,7 @@ HemorroidaBot e um assistente "MEGABRAIN" 100% client-side: roda **inteiramente 
 hemorroidabot/
 ├─ server.js          # Servidor estatico Node (http nativo). PORT=8080. Serve o diretorio atual (ROOT).
 ├─ README.md          # Visao geral, lista de ferramentas e legenda de dificuldade (pt-BR).
-├─ package.json       # CommonJS (type: "commonjs"). Scripts: serve / test / test:api-live / test:inference.
+├─ package.json       # CommonJS (type: "commonjs"). Scripts: serve / build:pages / test / test:api-live / test:inference.
 ├─ package-lock.json  # Lockfile (commitado; CI usa `npm ci`).
 ├─ src/
 │  ├─ index.html      # UI plain HTML, minimo de CSS, pt-BR.
@@ -73,6 +73,7 @@ Fluxo de uma mensagem:
 
 ```bash
 npm run serve          # `node server.js` → http://localhost:8080 (PORT env, default 8080)
+npm run build:pages    # monta `_site/` com src, vendor e favicons para o GitHub Pages
 npm test               # suíte completa node:test (`test/*.test.js` + `test/api/*.test.js`)
 npm run test:api-live  # suite de APIs ao vivo (usa rede; pode ter flake/rate-limit)
 npm run test:inference # suite de inferencia WASM (so com modelo baixado/cache)

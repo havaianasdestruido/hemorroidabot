@@ -38,10 +38,7 @@ jobs:
         uses: actions/configure-pages@v5
 
       - name: Montar site estatico no artefato
-        run: |
-          mkdir -p _site/src
-          cp -r src/. _site/src/
-          cp src/index.html _site/index.html
+        run: npm run build:pages
 
       - name: Publicar artefato de Pages
         uses: actions/upload-pages-artifact@v3
