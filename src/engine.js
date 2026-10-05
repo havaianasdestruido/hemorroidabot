@@ -1,10 +1,38 @@
 // HemorroidaBot Engine - executa .gguf via @wllama/wllama (WebAssembly llama.cpp)
 // Le o blob do Cache Storage do navegador e gera respostas 100% local.
 
-const WLLAMA_JS_URL = '../vendor/wllama/index.js';
-const WLLAMA_WASM_DEFAULT = '../vendor/wllama/wasm/wllama.wasm';
-const WLLAMA_COMPAT_JS = '../vendor/wllama-compat/wllama.js';
-const WLLAMA_COMPAT_WASM = '../vendor/wllama-compat/wllama.wasm';
+// URLs dos recursos wllama, RESOLVIDAS EM RELACAO A ESTE MODULO (import.meta.url).
+// Nao use paths relativos crus aqui: o wllama resolve os paths do pathConfig e
+// do setCompat() contra document.baseURI (URL da PAGINA). Em hospedagem com
+// subpath (ex: GitHub Pages em user.github.io/hemorroidabot/) um "../vendor/..."
+// subiria um nivel demais e pediria "<origem>/vendor/..." fora do site, recebendo
+// a pagina 404 em HTML. O WASM entao falha com "expected magic word 00 61 73 6d".
+// URL absoluta (module-relative) e imune ao base da pagina e funciona em qualquer
+// subpath. Obs: o import() dinamico abaixo ja resolvia contra o modulo; a mudanca
+// e necessaria so para o que o wllama resolve contra a pagina.
+// Fallback: se o modulo for carregado sem base resolvivel (data:/blob:, usado
+// pelo harness de testes em Node), mantem o path relativo cru (comportamento
+// antigo) em vez de explodir no top-level do modulo.
+function moduleAssetURL(relativePath) {
+  try {
+    return new URL(relativePath, import.meta.url).href;
+  } catch (e) {
+    return relativePath;
+  }
+}
+
+const WLLAMA_JS_URL = moduleAssetURL('../vendor/wllama/index.js');
+const WLLAMA_WASM_DEFAULT = moduleAssetURL('../vendor/wllama/wasm/wllama.wasm');
+const WLLAMA_COMPAT_JS = moduleAssetURL('../vendor/wllama-compat/wllama.js');
+const WLLAMA_COMPAT_WASM = moduleAssetURL('../vendor/wllama-compat/wllama.wasm');
+
+// Recursos expostos para testes (test/engine-paths.test.js).
+const ENGINE_ASSETS = {
+  wllamaJs: WLLAMA_JS_URL,
+  wllamaWasm: WLLAMA_WASM_DEFAULT,
+  compatJs: WLLAMA_COMPAT_JS,
+  compatWasm: WLLAMA_COMPAT_WASM
+};
 const CACHE_NAME_DEFAULTS = 'hemorroida-models-v1';
 const translate = function(key, vars, fallback) { return typeof I18n !== 'undefined' ? I18n.t(key, vars) : fallback; };
 
@@ -262,7 +290,8 @@ export {
   chat,
   isModelLoaded,
   unloadModel,
-  getCachedBlob
+  getCachedBlob,
+  ENGINE_ASSETS
 };
 
 // Expoe para scripts globais (app.js) e avisa que o modulo carregou.
@@ -273,6 +302,7 @@ window.HemorroidaEngine = {
   chat: chat,
   isModelLoaded: isModelLoaded,
   unloadModel: unloadModel,
-  getCachedBlob: getCachedBlob
+  getCachedBlob: getCachedBlob,
+  ENGINE_ASSETS: ENGINE_ASSETS
 };
 window.dispatchEvent(new CustomEvent('hemorroida-engine-ready'));
