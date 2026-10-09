@@ -2,37 +2,46 @@
 # This file automatically labels pull requests based on the files changed
 
 frontend:
-  - any:
-    - 'src/**'
-    - '*.html'
-    - 'favicons/**'
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/**/*'
+          - '*.html'
+          - 'favicons/**/*'
 
 backend:
-  - 'server.js'
+  - changed-files:
+      - any-glob-to-any-file: 'server.js'
 
 tests:
-  - any:
-    - 'test/**'
-    - '**/*.test.js'
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'test/**/*'
+          - '**/*.test.js'
 
 documentation:
-  - 'README.md'
-  - '*.md'
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'README.md'
+          - '*.md'
 
 config:
-  - any:
-    - 'package.json'
-    - 'package-lock.json'
-    - '.gitignore'
-    - '.github/**'
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'package.json'
+          - 'package-lock.json'
+          - '.gitignore'
+          - '.github/**/*'
 
 dependencies:
-  - any:
-    - 'package.json'
-    - 'package-lock.json'
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'package.json'
+          - 'package-lock.json'
 
 tools:
-  - 'tools/**'
+  - changed-files:
+      - any-glob-to-any-file: 'tools/**/*'
 
 vendor:
-  - 'vendor/**'
+  - changed-files:
+      - any-glob-to-any-file: 'vendor/**/*'
