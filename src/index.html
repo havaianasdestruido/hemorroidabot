@@ -6,26 +6,52 @@
     <title>HemorróidaBot</title>
     <link rel="icon" type="image/png" href="favicons/emoji.png">
     <style>
-        body { max-width: 640px; margin: 0 auto; padding: 20px; font-family: monospace; }
-        h1 { font-size: 1.8em; }
+        * { box-sizing: border-box; }
+        body { max-width: 640px; margin: 0 auto; padding: 20px; font-family: monospace; background: #fff; color: #222; line-height: 1.4; }
+        h1 { font-size: 1.8em; margin: 0; }
         h2 { font-size: 1.2em; }
-        textarea { width: 100%; }
-        select, input { width: 100%; box-sizing: border-box; }
-        #language-select { width: auto; }
-        pre { white-space: pre-wrap; }
-        .row { display: flex; gap: 6px; flex-wrap: wrap; }
+        .header-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 4px; }
+        .lang-control { display: flex; align-items: center; gap: 6px; }
+        textarea { width: 100%; box-sizing: border-box; font-family: monospace; padding: 6px; resize: vertical; }
+        select, input[type="text"] { width: 100%; box-sizing: border-box; padding: 6px; font-family: monospace; margin-top: 2px; margin-bottom: 8px; }
+        #language-select { width: auto; margin: 0; }
+        pre { white-space: pre-wrap; margin: 0; font-family: inherit; }
+        fieldset { margin-bottom: 12px; border: 1px solid #ccc; padding: 10px; border-radius: 4px; }
+        legend { font-weight: bold; padding: 0 4px; }
+        button { font-family: monospace; padding: 6px 12px; cursor: pointer; background: #f0f0f0; border: 1px solid #aaa; border-radius: 3px; }
+        button:hover:not(:disabled) { background: #e0e0e0; }
+        button:active:not(:disabled) { background: #d0d0d0; }
+        button:disabled { opacity: 0.6; cursor: not-allowed; }
+        .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
         .rec { color: #c00; font-weight: bold; }
-        #perf { font-size: 0.8em; }
+        #perf { font-size: 0.85em; }
+        #messages { max-height: 300px; overflow-y: auto; margin-top: 8px; display: flex; flex-direction: column; gap: 8px; }
+        .msg { padding: 8px; border-radius: 4px; background: #f9f9f9; border: 1px solid #eee; }
+        .msg-user { background: #eef6ff; border-color: #d0e3ff; }
+        .msg-bot { background: #f4f4f4; border-color: #e0e0e0; }
+        #tools-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+        #tools-grid button { font-size: 0.85em; padding: 4px 8px; }
+        #file-list { white-space: pre-wrap; font-size: 0.85em; margin-top: 8px; background: #f8f8f8; padding: 6px; border-radius: 3px; max-height: 200px; overflow-y: auto; }
         .toolchain { margin: 4px 0 6px 0; padding: 6px 8px; border-left: 2px solid #999; background: #f3f3f3; font-size: 0.85em; color: #666; }
         .toolchain-step { display: flex; align-items: center; gap: 6px; padding: 1px 0; }
         .toolchain-icon { width: 14px; height: 14px; flex-shrink: 0; }
         .toolchain-label { color: #777; }
         .msg-meta { color: #999; font-size: 0.75em; margin-bottom: 2px; }
+        .tool-opt-line { margin-top: 8px; font-size: 0.9em; }
     </style>
 </head>
 <body>
 
-    <div class="row"><h1>HemorróidaBot</h1><label for="language-select" data-i18n="language.label">Idioma</label><select id="language-select" aria-label="Idioma"><option value="pt-BR" data-i18n="language.pt">Portugues (Brasil)</option><option value="en-US" data-i18n="language.en">English (US)</option></select></div>
+    <div class="header-row">
+        <h1>HemorróidaBot</h1>
+        <div class="lang-control">
+            <label for="language-select" data-i18n="language.label">Idioma</label>
+            <select id="language-select" aria-label="Idioma">
+                <option value="pt-BR" data-i18n="language.pt">Portugues (Brasil)</option>
+                <option value="en-US" data-i18n="language.en">English (US)</option>
+            </select>
+        </div>
+    </div>
     <p data-i18n="app.tagline">MEGABRAIN local so com JS no front-end.</p>
 
     <form id="main-form" onsubmit="return false;">
@@ -45,7 +71,7 @@
             <input id="repo-input" type="text" placeholder="autor/modelo-GGUF" data-i18n-placeholder="download.repoPlaceholder">
             <label for="file-input" data-i18n="download.file">Arquivo:</label>
             <input id="file-input" type="text" placeholder="modelo-q4_k_m.gguf" data-i18n-placeholder="download.filePlaceholder">
-            <br><br>
+            <br>
             <div class="row">
                 <button type="button" id="list-btn" data-i18n="download.list">Listar arquivos</button>
                 <button type="button" id="dl-btn" data-i18n="download.download">Baixar e cachear</button>
@@ -60,7 +86,7 @@
 
         <fieldset>
             <legend data-i18n="voice.legend">Entrada / Voz</legend>
-            <div class="row">
+            <div class="row" style="margin-bottom: 8px;">
                 <label><input type="radio" name="mode" value="text" checked> <span data-i18n="voice.text">Texto</span></label>
                 <label><input type="radio" name="mode" value="voice"> <span data-i18n="voice.voice">Voz</span></label>
             </div>
@@ -87,7 +113,7 @@
             <legend data-i18n="message.legend">Mensagem</legend>
             <label for="user-input" data-i18n="message.label">Digite ou dite:</label>
             <textarea id="user-input" rows="3" placeholder="Sua mensagem..." data-i18n-placeholder="message.placeholder"></textarea>
-            <br>
+            <br><br>
             <button type="button" id="send-btn" onclick="sendMessage()" data-i18n="message.send">Enviar</button>
         </fieldset>
     </form>
