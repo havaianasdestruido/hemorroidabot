@@ -1,74 +1,49 @@
-# GitHub PR Labeler Configuration for hemorroidabot
-# This file automatically labels pull requests based on the files changed
+# GitHub PR Labeler Configuration for hemorroidabot (actions/labeler@v5)
 
-# Core Application Files
 frontend:
-  - any:
-    - src/**
-    - '*.html'
-    - 'favicons/**'
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/**/*'
+          - '*.html'
+          - 'favicons/**/*'
 
 backend:
-  - server.js
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'server.js'
 
 tests:
-  - any:
-    - test/**
-    - '**/*.test.js'
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'test/**/*'
+          - '**/*.test.js'
 
 documentation:
-  - README.md
-  - '*.md'
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'README.md'
+          - '*.md'
 
 config:
-  - any:
-    - package.json
-    - package-lock.json
-    - .gitignore
-    - '.github/**'
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'package.json'
+          - 'package-lock.json'
+          - '.gitignore'
+          - '.github/**/*'
 
 dependencies:
-  - any:
-    - package.json
-    - package-lock.json
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'package.json'
+          - 'package-lock.json'
 
 tools:
-  - tools/**
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'tools/**/*'
 
 vendor:
-  - vendor/**
-
-# Type-based Labels
-"type: bug":
-  - body:
-    - '/bug/i'
-    - '/fix/i'
-    - '/issue/i'
-
-"type: feature":
-  - body:
-    - '/feature/i'
-    - '/enhancement/i'
-    - '/new/i'
-
-"type: chore":
-  - body:
-    - '/chore/i'
-    - '/refactor/i'
-
-"type: docs":
-  - documentation:
-    - any:
-      - README.md
-      - '*.md'
-
-# Size-based Labels (requires action)
-"size: small":
-  - any:
-    - branch:
-      - '/^(?!.{10})/'
-
-"size: large":
-  - any:
-    - branch:
-      - '/^(?=.{50,})/'
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'vendor/**/*'
