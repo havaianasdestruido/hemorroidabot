@@ -1,49 +1,33 @@
 # GitHub PR Labeler Configuration for hemorroidabot (actions/labeler@v4)
 
 frontend:
-  - changed-files:
-      - any-glob-to-any-file:
-          - 'src/**/*'
-          - '*.html'
-          - 'favicons/**/*'
+  - 'src/**/*'
+  - '*.html'
+  - 'favicons/**/*'
 
 backend:
-  - changed-files:
-      - any-glob-to-any-file:
-          - 'server.js'
+  - 'server.js'
 
 tests:
-  - changed-files:
-      - any-glob-to-any-file:
-          - 'test/**/*'
-          - '**/*.test.js'
+  - 'test/**/*'
+  - '**/*.test.js'
 
 documentation:
-  - changed-files:
-      - any-glob-to-any-file:
-          - 'README.md'
-          - '*.md'
+  - 'README.md'
+  - '*.md'
 
 config:
-  - changed-files:
-      - any-glob-to-any-file:
-          - 'package.json'
-          - 'package-lock.json'
-          - '.gitignore'
-          - '.github/**/*'
+  - 'package.json'
+  - 'package-lock.json'
+  - '.gitignore'
+  - '.github/**/*'
 
 dependencies:
-  - changed-files:
-      - any-glob-to-any-file:
-          - 'package.json'
-          - 'package-lock.json'
+  - 'package.json'
+  - 'package-lock.json'
 
 tools:
-  - changed-files:
-      - any-glob-to-any-file:
-          - 'tools/**/*'
+  - 'tools/**/*'
 
 vendor:
-  - changed-files:
-      - any-glob-to-any-file:
-          - 'vendor/**/*'
+  - 'vendor/**/*'
