@@ -84,26 +84,13 @@ function modelFileURL(repo, file, revision) {
 
 // Obtem blob do Cache Storage (baixado via models.js)
 function getCachedBlob(repo, file, revision) {
-  return Promise.resolve().then(function() {
-    if (typeof caches === 'undefined' || !caches || typeof caches.open !== 'function') {
-      throw new Error(translate('models.cacheUnsupported', null, 'Cache API nao suportada neste navegador.'));
-    }
-    const url = modelFileURL(repo, file, revision);
-    return caches.open(modelsCacheName()).then(function(cache) {
-      return cache.match(url).then(function(resp) {
-        if (!resp) throw new Error(translate('engine.notCached', null, 'Modelo nao esta em cache. Baixe primeiro.'));
-        return resp.blob();
-      });
+  const url = modelFileURL(repo, file, revision);
+  return caches.open(modelsCacheName()).then(function(cache) {
+    return cache.match(url).then(function(resp) {
+      if (!resp) throw new Error(translate('engine.notCached', null, 'Modelo nao esta em cache. Baixe primeiro.'));
+      return resp.blob();
     });
   });
-}
-
-function getCurrentModel() {
-  return currentSource ? { repo: currentSource.repo, file: currentSource.file } : null;
-}
-
-function getCurrentSource() {
-  return getCurrentModel();
 }
 
 // Inicializa a engine WASM (carrega o runtime llama.cpp).
@@ -151,20 +138,6 @@ async function initWasm(gen) {
 }
 
 async function doLoadModelFromCache(repo, file, revision, gen) {
-  if (isModelLoaded() && currentSource && currentSource.repo === repo && currentSource.file === file) {
-    return { repo: repo, file: file };
-  }
-  if (instance) {
-    const prev = instance;
-    instance = null;
-    initPromise = null;
-    currentSource = null;
-    try {
-      await prev.exit();
-    } catch (e) {
-      console.warn('doLoadModelFromCache: exit() anterior falhou:', e);
-    }
-  }
   await initWasm(gen);
   if (gen !== generation) throw staleLoadError(); // nao comeca a carregar obsoleto
   const engine = ensureEngine();
@@ -318,8 +291,6 @@ export {
   isModelLoaded,
   unloadModel,
   getCachedBlob,
-  getCurrentModel,
-  getCurrentSource,
   ENGINE_ASSETS
 };
 
@@ -332,8 +303,6 @@ window.HemorroidaEngine = {
   isModelLoaded: isModelLoaded,
   unloadModel: unloadModel,
   getCachedBlob: getCachedBlob,
-  getCurrentModel: getCurrentModel,
-  getCurrentSource: getCurrentModel,
   ENGINE_ASSETS: ENGINE_ASSETS
 };
 window.dispatchEvent(new CustomEvent('hemorroida-engine-ready'));

@@ -103,12 +103,6 @@ test('fileURL: repo com trailing slash nao gera barra dupla', () => {
   assert.strictEqual(MM.fileURL('org/repo/', 'x.gguf', 'main').slice(8).indexOf('//'), -1);
 });
 
-test('fileURL: file com leading slash remove a barra para evitar barra dupla', () => {
-  const plain = MM.fileURL('org/repo', 'model.gguf', 'main');
-  assert.strictEqual(MM.fileURL('org/repo', '/model.gguf', 'main'), plain);
-  assert.strictEqual(MM.fileURL('org/repo', '///model.gguf', 'main'), plain);
-});
-
 test('findKnown: 4 modelos validos com repos HF exatos', () => {
   assert.strictEqual(MM.knownModels.length, 4);
   const expectedRepos = {

@@ -14,22 +14,11 @@ let coords = null;
 let perfIsDefault = true;
 
 // ============ Utils de DOM ============
-function activeModelName() {
-  const engine = window.HemorroidaEngine;
-  if (engine && typeof engine.getCurrentModel === 'function') {
-    const cur = engine.getCurrentModel();
-    if (cur && cur.file) {
-      return cur.file;
-    }
-  }
-  return modelSelect ? modelSelect.value : 'bot';
-}
-
 function addMessage(text, sender, opts) {
   const div = document.createElement('div');
   div.className = 'msg msg-' + (sender || 'bot');
   const time = new Date().toLocaleTimeString(I18n.getLocale(), { hour: '2-digit', minute: '2-digit' });
-  const who = sender === 'user' ? t('message.you') : activeModelName();
+  const who = sender === 'user' ? t('message.you') : modelSelect.value;
   if (opts && opts.chain && opts.chain.length) {
     const chain = document.createElement('div');
     chain.className = 'toolchain';
@@ -141,12 +130,12 @@ async function engineRespond(msgs) {
       temperature: 0.7,
       onToken: function(dt) {
         acc += dt;
-        pre.textContent = '[' + timeNow() + '] ' + activeModelName() + ': ' + acc;
+        pre.textContent = '[' + timeNow() + '] ' + modelSelect.value + ': ' + acc;
         messagesEl.scrollTop = messagesEl.scrollHeight;
       }
     });
     statusDiv.remove();
-    pre.textContent = '[' + timeNow() + '] ' + activeModelName() + ': ' + res.text;
+    pre.textContent = '[' + timeNow() + '] ' + modelSelect.value + ': ' + res.text;
     Brain.addMessage('assistant', res.text);
     addPerf(res.perf);
     speak(res.text);
