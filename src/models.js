@@ -25,7 +25,8 @@ var ModelManager = (function() {
   function fileURL(repo, file, revision) {
     var rev = revision || 'main';
     var base = String(repo).replace(/\/+$/, '');
-    return 'https://huggingface.co/' + base + '/resolve/' + rev + '/' + file;
+    var cleanFile = String(file).replace(/^\/+/, '');
+    return 'https://huggingface.co/' + base + '/resolve/' + rev + '/' + cleanFile;
   }
 
   // Verifica se uma URL ja esta em cache (nao precisa baixar de novo).
@@ -44,6 +45,9 @@ var ModelManager = (function() {
     return fetch(url, { mode: 'cors' }).then(function(response) {
       if (!response.ok) {
         throw new Error(translate('models.downloadFailed', { status: response.status }, 'Falha no download: HTTP ' + response.status));
+      }
+      if (!response.body) {
+        throw new Error(translate('models.downloadFailed', { status: response.status || 0 }, 'Falha no download: HTTP ' + response.status));
       }
       contentLength = +response.headers.get('Content-Length') || 0;
       var reader = response.body.getReader();

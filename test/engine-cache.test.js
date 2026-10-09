@@ -58,11 +58,31 @@ test('modulo expoe window.HemorroidaEngine com a superficie esperada', () => {
     'chat',
     'generate',
     'getCachedBlob',
+    'getCurrentModel',
+    'getCurrentSource',
     'initWasm',
     'isModelLoaded',
     'loadModelFromCache',
     'unloadModel'
   ].sort());
+});
+
+test('getCurrentModel retorna null quando nada foi carregado', () => {
+  assert.strictEqual(Engine.getCurrentModel(), null);
+  assert.strictEqual(window.HemorroidaEngine.getCurrentModel(), null);
+});
+
+test('getCachedBlob com caches indisponivel rejeita com erro de Cache API', async () => {
+  const oldCaches = globalThis.caches;
+  delete globalThis.caches;
+  try {
+    await assert.rejects(
+      () => Engine.getCachedBlob('org/repo', 'm.gguf', 'main'),
+      /Cache API nao suportada/
+    );
+  } finally {
+    globalThis.caches = oldCaches;
+  }
 });
 
 test('getCachedBlob acha modelo baixado por repo com trailing slash', async () => {
